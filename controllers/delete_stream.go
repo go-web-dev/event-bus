@@ -7,7 +7,7 @@ import (
 )
 
 type deleteStreamRequest struct {
-	StreamName string `json:"stream_name"`
+	StreamName string `json:"stream_name" type:"string"`
 }
 
 func (router Router) deleteStream(w io.Writer, r request) error {
@@ -18,7 +18,7 @@ func (router Router) deleteStream(w io.Writer, r request) error {
 		return err
 	}
 
-	err = router.bus.Delete(body.StreamName)
+	err = router.bus.DeleteStream(body.StreamName)
 	if err != nil {
 		transport.SendJSON(w, deleteStreamOperation, err)
 		return err

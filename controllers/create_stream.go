@@ -7,7 +7,7 @@ import (
 )
 
 type createStreamRequest struct {
-	StreamName string `json:"stream_name"`
+	StreamName string `json:"stream_name" type:"string"`
 }
 
 func (router Router) createStream(w io.Writer, r request) error {
@@ -18,7 +18,7 @@ func (router Router) createStream(w io.Writer, r request) error {
 		return err
 	}
 
-	s, err := router.bus.Create(body.StreamName)
+	s, err := router.bus.CreateStream(body.StreamName)
 	if err != nil {
 		transport.SendJSON(w, createStreamOperation, err)
 		return err

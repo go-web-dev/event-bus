@@ -8,15 +8,17 @@ import (
 	"net"
 	"time"
 
-	"github.com/chill-and-code/event-bus/controllers"
 	"github.com/chill-and-code/event-bus/logging"
-	"github.com/chill-and-code/event-bus/services"
-
 	"go.uber.org/zap"
 )
 
-type switcher interface {
+type router interface {
 	Switch(io.Writer, io.Reader) (bool, error)
+}
+
+type Settings struct {
+	Addr string
+	Router router
 }
 
 type Server struct {
@@ -24,23 +26,20 @@ type Server struct {
 	quit        chan struct{}
 	exited      chan struct{}
 	connections map[int]net.Conn
-	router      switcher
+	router      router
 }
 
-func ListenAndServe(addr string) *Server {
-	li, err := net.Listen("tcp", addr)
+func ListenAndServe(settings Settings) *Server {
+	li, err := net.Listen("tcp", settings.Addr)
 	if err != nil {
 		log.Fatal("could not create server listener:", err)
 	}
-	checkpoint := services.NewCheckpoint()
-	bus := services.NewBus(checkpoint)
-	router := controllers.NewRouter(bus)
 	srv := &Server{
 		listener:    li,
 		quit:        make(chan struct{}),
 		exited:      make(chan struct{}),
 		connections: map[int]net.Conn{},
-		router:      router,
+		router:      settings.Router,
 	}
 	go srv.serve()
 	return srv

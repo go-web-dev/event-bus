@@ -1,7 +1,13 @@
 package models
 
+type RequiredField struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Required bool   `json:"required"`
+}
+
 type OperationRequestError struct {
-	Body map[string]string `json:"body"`
+	Body []RequiredField `json:"body"`
 }
 
 func (e OperationRequestError) Error() string {

@@ -16,10 +16,12 @@ import (
 )
 
 const (
-	createStreamOperation = "create_stream"
-	deleteStreamOperation = "delete_stream"
-	exitOperation         = "exit"
-	decodeOperation       = "decode_request"
+	createStreamOperation    = "create_stream"
+	deleteStreamOperation    = "delete_stream"
+	writeMessageOperation    = "write_message"
+	processMessagesOperation = "process_messages"
+	exitOperation            = "exit"
+	decodeOperation          = "decode_request"
 )
 
 type request struct {
@@ -29,18 +31,27 @@ type request struct {
 
 type operator func(io.Writer, request) error
 
+type EventBus interface {
+	CreateStream(streamName string) (services.Stream, error)
+	DeleteStream(streamName string) error
+	WriteMessage(streamName string, message json.RawMessage) error
+	ProcessMessages(streamName string, processor services.MessageProcessor) error
+}
+
 type Router struct {
-	bus        services.Bus
+	bus        EventBus
 	operations map[string]operator
 }
 
-func NewRouter(b services.Bus) Router {
+func NewRouter(b EventBus) Router {
 	router := Router{
 		bus: b,
 	}
 	router.operations = map[string]operator{
-		createStreamOperation: router.createStream,
-		deleteStreamOperation: router.deleteStream,
+		createStreamOperation:    router.createStream,
+		deleteStreamOperation:    router.deleteStream,
+		writeMessageOperation:    router.writeMessage,
+		processMessagesOperation: router.processMessages,
 	}
 	return router
 }

@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"io"
 	"reflect"
+	"strings"
+
+	"github.com/chill-and-code/event-bus/models"
 )
 
 func Decode(r io.Reader, v interface{}) error {
@@ -14,13 +17,22 @@ func Decode(r io.Reader, v interface{}) error {
 	return nil
 }
 
-func DecodeFields(v interface{}) map[string]string {
-	fields := map[string]string{}
+func DecodeFields(v interface{}) []models.RequiredField {
+	fields := make([]models.RequiredField, 0)
 	t := reflect.TypeOf(v)
 	for i := 0; i < t.NumField(); i++ {
-		fieldName := t.Field(i).Tag.Get("json")
-		fieldType := t.Field(i).Type.Name()
-		fields[fieldName] = fieldType
+		jsonTag := strings.Split(t.Field(i).Tag.Get("json"), ",")
+		typeTag := strings.Split(t.Field(i).Tag.Get("type"), ",")
+		isRequired := true
+		if len(jsonTag) == 2 && jsonTag[1] == "omitempty" {
+			isRequired = false
+		}
+		field := models.RequiredField{
+			Name: jsonTag[0],
+			Type: typeTag[0],
+			Required: isRequired,
+		}
+		fields = append(fields, field)
 	}
 	return fields
 }

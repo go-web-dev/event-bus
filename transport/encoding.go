@@ -12,6 +12,7 @@ type response struct {
 	Operation string      `json:"operation"`
 	Status    bool        `json:"status"`
 	Body      interface{} `json:"body,omitempty"`
+	Context   interface{} `json:"context,omitempty"`
 	Reason    string      `json:"reason,omitempty"`
 }
 
@@ -28,7 +29,6 @@ func SendError(w io.Writer, op string, err error) {
 }
 
 func toResponse(any interface{}, op string) response {
-	// separate client errors from server errors
 	res := response{
 		Operation: op,
 	}
@@ -38,7 +38,7 @@ func toResponse(any interface{}, op string) response {
 	case models.OperationRequestError:
 		res.Status = false
 		res.Reason = value.Error()
-		res.Body = value
+		res.Context = value
 	case error:
 		res.Status = false
 		res.Reason = value.Error()

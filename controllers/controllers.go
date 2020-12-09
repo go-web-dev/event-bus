@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
+	"github.com/chill-and-code/event-bus/logging"
 	"github.com/chill-and-code/event-bus/models"
 	"github.com/chill-and-code/event-bus/services"
 	"github.com/chill-and-code/event-bus/transport"
+
+	"go.uber.org/zap"
 )
 
 const (
@@ -45,8 +49,22 @@ func (router Router) Switch(w io.Writer, r io.Reader) (bool, error) {
 	var req request
 	err := transport.Decode(r, &req)
 	if err != nil {
-		transport.SendError(w, decodeOperation, err)
+		transport.SendError(w, decodeOperation, models.InvalidJSONError{})
 		return false, fmt.Errorf("could not decode request :%s", err)
+	}
+
+	ops := make([]string, 0)
+	for op := range router.operations {
+		ops = append(ops, op)
+	}
+	notFoundErr := fmt.Errorf(
+		"operation must be one of: '%s'",
+		strings.Join(ops, "', '"),
+	)
+
+	if req.Operation == "" {
+		transport.SendError(w, decodeOperation, notFoundErr)
+		return false, notFoundErr
 	}
 
 	if req.Operation == exitOperation {
@@ -55,23 +73,24 @@ func (router Router) Switch(w io.Writer, r io.Reader) (bool, error) {
 
 	operation, ok := router.operations[req.Operation]
 	if !ok {
-		e := fmt.Errorf("operation '%s' not found", req.Operation)
-		transport.SendError(w, decodeOperation, e)
-		return false, e
+		transport.SendError(w, decodeOperation, notFoundErr)
+		return false, notFoundErr
 	}
 	return false, operation(w, req)
 }
 
 func parseReq(r request, body interface{}) error {
+	decodedFields := transport.DecodeFields(body)
 	if r.Body == nil {
 		e := models.OperationRequestError{
-			Fields: transport.DecodeFields(body),
+			Body: decodedFields,
 		}
 		return e
 	}
 	err := transport.Decode(bytes.NewReader(r.Body), &body)
 	if err != nil {
-		return err
+		logging.Logger.Debug("could not decode request body", zap.Error(err))
+		return models.InvalidJSONError{}
 	}
 	return nil
 }

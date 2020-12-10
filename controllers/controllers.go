@@ -18,8 +18,10 @@ import (
 const (
 	createStreamOperation    = "create_stream"
 	deleteStreamOperation    = "delete_stream"
+	snapshotStreamOperation  = "snapshot_stream"
 	writeMessageOperation    = "write_message"
 	processMessagesOperation = "process_messages"
+	snapshotDBOperation      = "snapshot_db"
 	exitOperation            = "exit"
 	decodeOperation          = "decode_request"
 )

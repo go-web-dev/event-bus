@@ -64,6 +64,7 @@ func (b *Bus) CreateStream(streamName string) (Stream, error) {
 }
 
 func (b *Bus) DeleteStream(streamName string) error {
+	// delete all messages associated with the stream
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if _, ok := b.streams[streamName]; !ok {
@@ -73,14 +74,15 @@ func (b *Bus) DeleteStream(streamName string) error {
 	return nil
 }
 
-func (b *Bus) WriteMessage(streamName string, message json.RawMessage) error {
+func (b *Bus) WriteMessage(streamName string, body json.RawMessage) error {
+	// decides regarding Message vs Event
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	stream, ok := b.streams[streamName]
 	if !ok {
 		return fmt.Errorf("stream: '%s' not found", streamName)
 	}
-	return stream.WriteMessage(message)
+	return stream.WriteMessage(body)
 }
 
 type MessageProcessor interface {
@@ -91,6 +93,8 @@ type MessageProcessor interface {
 // save unprocessed messages to queue
 // save records with ttl
 // add snapshot operation
+// add possibility reprocess a message
+// when processing events: 1) remove old key 2) add same key with prefix `processed` for easier retrieval
 
 func (b *Bus) ProcessMessages(streamName string, processor MessageProcessor) error {
 	b.mu.Lock()
@@ -113,30 +117,4 @@ func (b *Bus) ProcessMessages(streamName string, processor MessageProcessor) err
 		stream.History[msg.ID] = msg
 		stream.queue.Remove(element)
 	}
-}
-
-type Message struct {
-	ID        string
-	CreatedAt time.Time       `json:"created_at"`
-	Processed bool            `json:"processed"`
-	Body      json.RawMessage `json:"body"`
-}
-
-type Stream struct {
-	ID        string             `json:"id"`
-	Name      string             `json:"name"`
-	CreatedAt time.Time          `json:"created_at"`
-	History   map[string]Message `json:"history"`
-	queue     *list.List
-}
-
-func (s Stream) WriteMessage(body json.RawMessage) error {
-	msg := Message{
-		ID:        uuid.New().String(),
-		CreatedAt: time.Now().UTC(),
-		Body:      body,
-	}
-	s.History[msg.ID] = msg
-	s.queue.PushBack(msg)
-	return nil
 }

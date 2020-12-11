@@ -7,32 +7,38 @@ import (
 	"github.com/chill-and-code/event-bus/transport"
 )
 
-type processMessagesRequest struct {
+type eventProcessor interface {
+	ProcessEvents(streamName string, processor services.EventProcessor) error
+}
+
+type processEventsRequest struct {
 	StreamName string `json:"stream_name" type:"string"`
 }
 
-type messageProcessor struct {
+type processor struct {
 	w io.Writer
 }
 
-func (p messageProcessor) Process(msg services.Message) error {
-	transport.SendJSON(p.w, processMessagesOperation, msg)
+func (p processor) Process(evt services.Event) error {
+	transport.SendJSON(p.w, processEventsOperation, evt)
 	return nil
 }
 
-func (router Router) processMessages(w io.Writer, r request) error {
-	var body processMessagesRequest
-	err := parseReq(r, body)
-	if err != nil {
-		transport.SendError(w, processMessagesOperation, err)
-		return err
-	}
+func (router Router) processEvents(bus eventProcessor) func(io.Writer, request) error {
+	return func(w io.Writer, r request) error {
+		var body processEventsRequest
+		err := parseReq(r, &body)
+		if err != nil {
+			transport.SendError(w, processEventsOperation, err)
+			return err
+		}
 
-	processor := messageProcessor{w: w}
-	err = router.bus.ProcessMessages(body.StreamName, processor)
-	if err != nil {
-		transport.SendError(w, processMessagesOperation, err)
-		return err
+		p := processor{w: w}
+		err = bus.ProcessEvents(body.StreamName, p)
+		if err != nil {
+			transport.SendError(w, processEventsOperation, err)
+			return err
+		}
+		return nil
 	}
-	return nil
 }

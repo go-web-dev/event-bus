@@ -7,24 +7,30 @@ import (
 	"github.com/chill-and-code/event-bus/transport"
 )
 
-type writeMessageRequest struct {
-	StreamName string          `json:"stream_name" type:"string"`
-	Message    json.RawMessage `json:"message" type:"[]byte"`
+type eventWriter interface {
+	WriteEvent(streamName string, event json.RawMessage) error
 }
 
-func (router Router) writeMessage(w io.Writer, r request) error {
-	var body writeMessageRequest
-	err := parseReq(r, body)
-	if err != nil {
-		transport.SendJSON(w, writeMessageOperation, err)
-		return err
-	}
+type writeEventRequest struct {
+	StreamName string          `json:"stream_name" type:"string"`
+	Event    json.RawMessage `json:"event" type:"[]byte"`
+}
 
-	err = router.bus.WriteMessage(body.StreamName, body.Message)
-	if err != nil {
-		transport.SendJSON(w, writeMessageOperation, err)
-		return err
+func (router Router) writeEvent(bus eventWriter) func(io.Writer, request) error {
+	return func(w io.Writer, r request) error {
+		var body writeEventRequest
+		err := parseReq(r, &body)
+		if err != nil {
+			transport.SendJSON(w, writeEventOperation, err)
+			return err
+		}
+
+		err = bus.WriteEvent(body.StreamName, body.Event)
+		if err != nil {
+			transport.SendJSON(w, writeEventOperation, err)
+			return err
+		}
+		transport.SendJSON(w, writeEventOperation, nil)
+		return nil
 	}
-	transport.SendJSON(w, writeMessageOperation, nil)
-	return nil
 }

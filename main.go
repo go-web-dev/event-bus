@@ -23,11 +23,19 @@ func main() {
 		log.Fatal("could not initialize logger: ", err)
 	}
 
-	db, err := badger.Open(badger.DefaultOptions("badger"))
+	dbOptions := badger.DefaultOptions("badger")
+	dbOptions.Logger = nil
+	db, err := badger.Open(dbOptions)
 	if err != nil {
 		log.Fatal("could not open badger db: ", err)
 	}
+
 	bus := services.NewBus(db)
+	err = bus.Init()
+	if err != nil {
+		log.Fatal("could not initialize event bus: ", err)
+	}
+
 	router := controllers.NewRouter(bus)
 
 	serverSettings := server.Settings{

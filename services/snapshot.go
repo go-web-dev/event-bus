@@ -22,6 +22,8 @@ func (b *Bus) SnapshotDB(output string) error {
 
 	// since: version 1 means the very first element of db
 	// version increments on every update
+	// the file output is a protobuf encoded list
+	// you can decode it using db.Load()
 	n, err := b.db.Backup(backupFile, 1)
 	if err != nil {
 		logger.Error("could not backup database", zap.Error(err))

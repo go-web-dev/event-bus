@@ -19,6 +19,7 @@ type DB interface {
 	View(func(txn *badger.Txn) error) error
 	Update(func(txn *badger.Txn) error) error
 	Backup(w io.Writer, since uint64) (uint64, error)
+	NewStream() *badger.Stream
 }
 
 func NewBus(db DB) *Bus {
@@ -37,6 +38,9 @@ type Bus struct {
 
 func (b *Bus) Init() error {
 	logger := logging.Logger
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
 	logger.Info("initializing event bus with streams")
 	err := b.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -183,16 +187,15 @@ func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
 }
 
 type EventProcessor interface {
-	Process(events Event) error
+	Process(event Event) error
 }
 
-// save records with ttl
-// add snapshot operation
 // add possibility reprocess a message
-// when processing events: 1) remove old key 2) add same key with prefix `processed` for easier retrieval
 // add more custom errors to hide internals
+// add backups to a directory + name files with timestamp
+// add possibility to snapshot individual streams
 
-func (b *Bus) ProcessEvents(streamName string, processor EventProcessor) error {
+func (b *Bus) ProcessEvents2(streamName string, processor EventProcessor) error {
 	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -230,6 +233,26 @@ func (b *Bus) ProcessEvents(streamName string, processor EventProcessor) error {
 		if err != nil {
 			return err
 		}
+	}
+	logger.Info("events processing finished")
+	return nil
+}
+
+func (b *Bus) ProcessEvents(streamName string, processor EventProcessor) error {
+	logger := logging.Logger
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	stream, ok := b.streams[streamName]
+	if !ok {
+		return fmt.Errorf("stream: '%s' not found", streamName)
+	}
+
+	logger.Info("events processing started")
+	err := stream.streamEvents(b.db, processor)
+	if err != nil {
+		logger.Error("could not stream events", zap.Error(err))
+		return err
 	}
 	logger.Info("events processing finished")
 	return nil

@@ -2,8 +2,10 @@ package services
 
 import (
 	"container/list"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/dgraph-io/badger/v2/pb"
 	"time"
 
 	"github.com/dgraph-io/badger/v2"
@@ -30,7 +32,7 @@ func (s Stream) WriteEvent(db DB, evt Event) error {
 				return err
 			}
 		}
-		oneMonth := uint64(evt.CreatedAt.Add(time.Hour * 720).Unix())
+		oneMonth := uint64(evt.CreatedAt.Add(time.Hour * 720).UnixNano())
 		entry := &badger.Entry{
 			Key:       evt.key(),
 			Value:     evt.value(),
@@ -125,4 +127,31 @@ func (s Stream) value() []byte {
 		return []byte{}
 	}
 	return bs
+}
+
+func (s *Stream) streamEvents(db DB, processor EventProcessor) error {
+	prefix := fmt.Sprintf("event:%s:%d",s.ID, eventUnprocessedStatus)
+	stream := db.NewStream()
+	stream.NumGo = 16
+	stream.Prefix = []byte(prefix)
+
+	stream.Send = func(list *pb.KVList) error {
+		for _, v := range list.Kv {
+			var evt Event
+			err := json.Unmarshal(v.Value, &evt)
+			if err != nil {
+				return err
+			}
+			err = processor.Process(evt)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	if err := stream.Orchestrate(context.Background()); err != nil {
+		return err
+	}
+	return nil
 }

@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/dgraph-io/badger/v2/pb"
 	"time"
 
 	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v2/pb"
 	"go.uber.org/zap"
 
 	"github.com/chill-and-code/event-bus/logging"
@@ -83,6 +83,8 @@ type eventResult struct {
 }
 
 func (s Stream) fetchEvents(db DB, key string) ([]eventResult, error) {
+	// make a generic fetch
+	// make a generic delete
 	logger := logging.Logger
 	eventRes := make([]eventResult, 0)
 	logger.Info("fetching events started")
@@ -130,7 +132,7 @@ func (s Stream) value() []byte {
 }
 
 func (s *Stream) streamEvents(db DB, processor EventProcessor) error {
-	prefix := fmt.Sprintf("event:%s:%d",s.ID, eventUnprocessedStatus)
+	prefix := fmt.Sprintf("event:%s:%d", s.ID, eventUnprocessedStatus)
 	stream := db.NewStream()
 	stream.NumGo = 16
 	stream.Prefix = []byte(prefix)
@@ -144,8 +146,12 @@ func (s *Stream) streamEvents(db DB, processor EventProcessor) error {
 			}
 			err = processor.Process(evt)
 			if err != nil {
+				// mark as retry
 				return err
+			} else {
+				// mark as processed
 			}
+			// remove unprocessed
 		}
 		return nil
 	}

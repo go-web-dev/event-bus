@@ -13,6 +13,7 @@ import (
 const (
 	eventUnprocessedStatus = 0
 	eventProcessedStatus   = 1
+	eventRetryStatus       = 2
 )
 
 type Event struct {

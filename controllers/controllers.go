@@ -22,6 +22,7 @@ const (
 	snapshotStreamOperation = "snapshot_stream"
 	writeEventOperation     = "write_event"
 	processEventsOperation  = "process_events"
+	retryEventsOperation    = "retry_events"
 	snapshotDBOperation     = "snapshot_db"
 	exitOperation           = "exit"
 	decodeOperation         = "decode_request"

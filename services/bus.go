@@ -160,8 +160,6 @@ type EventProcessor interface {
 	Process(events Event) error
 }
 
-// load streams and events
-// save unprocessed messages to queue
 // save records with ttl
 // add snapshot operation
 // add possibility reprocess a message
@@ -196,6 +194,7 @@ func (b *Bus) ProcessEvents(streamName string, processor EventProcessor) error {
 		evt.Processed = true
 		err := processor.Process(evt)
 		if err != nil {
+			// mark event as failed ==> need to retry later
 			return err
 		}
 

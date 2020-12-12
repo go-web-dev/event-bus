@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
@@ -17,11 +18,11 @@ import (
 type DB interface {
 	View(func(txn *badger.Txn) error) error
 	Update(func(txn *badger.Txn) error) error
+	Backup(w io.Writer, since uint64) (uint64, error)
 }
 
 func NewBus(db DB) *Bus {
 	b := &Bus{
-		c:       NewCheckpoint(),
 		db:      db,
 		streams: map[string]Stream{},
 	}
@@ -29,7 +30,6 @@ func NewBus(db DB) *Bus {
 }
 
 type Bus struct {
-	c       Checkpoint
 	mu      sync.Mutex
 	db      DB
 	streams map[string]Stream

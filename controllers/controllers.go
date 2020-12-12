@@ -20,7 +20,6 @@ const (
 	createStreamOperation   = "create_stream"
 	deleteStreamOperation   = "delete_stream"
 	getStreamInfoOperation  = "get_stream_info"
-	snapshotStreamOperation = "snapshot_stream"
 	writeEventOperation     = "write_event"
 	processEventsOperation  = "process_events"
 	retryEventsOperation    = "retry_events"
@@ -40,6 +39,7 @@ type EventBus interface {
 	streamInfoGetter
 	eventWriter
 	eventProcessor
+	dbSnapshotter
 }
 
 type operator func(io.Writer, request) error
@@ -56,6 +56,7 @@ func NewRouter(b EventBus) Router {
 		getStreamInfoOperation: router.getStreamInfo(b),
 		writeEventOperation:    router.writeEvent(b),
 		processEventsOperation: router.processEvents(b),
+		snapshotDBOperation:    router.snapshotDB(b),
 		healthOperation: func(w io.Writer, _ request) error {
 			transport.SendJSON(w, healthOperation, nil)
 			return nil

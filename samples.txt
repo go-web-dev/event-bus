@@ -1,6 +1,8 @@
 {"operation": "health"}
 
 {"operation": "create_stream", "body": {"stream_name": "steve"}}
+{"operation": "create_stream", "body": {"stream_name": "john"}}
+{"operation": "create_stream", "body": {"stream_name": "mike"}}
 
 {"operation": "delete_stream", "body": {"stream_name": "steve"}}
 
@@ -13,5 +15,7 @@
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e5": "event 5 value"}}}
 
 {"operation": "process_events", "body": {"stream_name": "steve"}}
+
+{"operation": "snapshot_db", "body": {"output": "backup-001"}}
 
 {"operation": "exit"}

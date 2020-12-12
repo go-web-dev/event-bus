@@ -8,8 +8,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/chill-and-code/event-bus/logging"
 	"go.uber.org/zap"
+
+	"github.com/chill-and-code/event-bus/logging"
 )
 
 type router interface {

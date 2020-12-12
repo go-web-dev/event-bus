@@ -1,3 +1,5 @@
+{"operation": "health"}
+
 {"operation": "create_stream", "body": {"stream_name": "steve"}}
 
 {"operation": "delete_stream", "body": {"stream_name": "steve"}}
@@ -11,3 +13,5 @@
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e5": "event 5 value"}}}
 
 {"operation": "process_events", "body": {"stream_name": "steve"}}
+
+{"operation": "exit"}

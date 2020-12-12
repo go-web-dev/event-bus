@@ -52,7 +52,7 @@ func (b *Bus) Init() error {
 					return err
 				}
 				stream.eventsQueue = list.New()
-				stream.eventsMap = map[string]struct{}{}
+				stream.eventsMap = map[string]*list.Element{}
 				b.streams[stream.Name] = stream
 				return nil
 			})
@@ -79,11 +79,11 @@ func (b *Bus) CreateStream(streamName string) (Stream, error) {
 		return Stream{}, fmt.Errorf("stream: '%s' already exists", streamName)
 	}
 	s := Stream{
-		Name:      streamName,
-		ID:        uuid.New().String(),
-		CreatedAt: time.Now().UTC(),
-		eventsQueue:     list.New(),
-		eventsMap: map[string]struct{}{},
+		Name:        streamName,
+		ID:          uuid.New().String(),
+		CreatedAt:   time.Now().UTC(),
+		eventsQueue: list.New(),
+		eventsMap:   map[string]*list.Element{},
 	}
 	err := b.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(s.key(), s.value())
@@ -98,7 +98,6 @@ func (b *Bus) CreateStream(streamName string) (Stream, error) {
 }
 
 func (b *Bus) DeleteStream(streamName string) error {
-	// delete all messages associated with the stream
 	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -108,14 +107,42 @@ func (b *Bus) DeleteStream(streamName string) error {
 		return fmt.Errorf("stream: '%s' not found", streamName)
 	}
 
-	err := b.db.Update(func(txn *badger.Txn) error {
-		return txn.Delete(s.key())
+	key := fmt.Sprintf("event:%s", s.ID)
+	eventsResult, err := s.fetchEvents(b.db, key)
+	if err != nil {
+		return err
+	}
+
+	err = b.db.Update(func(txn *badger.Txn) error {
+		for _, evtRes := range eventsResult {
+			err := txn.Delete(evtRes.key)
+			if err != nil {
+				logger.Error(
+					"could not delete event",
+					zap.Error(err),
+					zap.String("event_id", evtRes.event.ID),
+				)
+				return err
+			}
+			queueEl, ok := s.eventsMap[string(evtRes.key)]
+			if !ok {
+				return fmt.Errorf("events queue and map missmatch on event with key: '%s'", evtRes.key)
+			}
+			s.eventsQueue.Remove(queueEl)
+			delete(s.eventsMap, string(evtRes.key))
+		}
+		err := txn.Delete(s.key())
+		if err != nil {
+			return err
+		}
+		delete(b.streams, streamName)
+		return nil
 	})
 	if err != nil {
 		logger.Debug("could not delete stream from db", zap.Error(err))
 		return err
 	}
-	delete(b.streams, streamName)
+
 	logger.Info("successfully deleted stream", zap.String("stream_id", s.ID))
 	return nil
 }
@@ -134,7 +161,6 @@ func (b *Bus) GetStreamInfo(streamName string) (Stream, error) {
 }
 
 func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
-	// add expiration when saving to db
 	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()

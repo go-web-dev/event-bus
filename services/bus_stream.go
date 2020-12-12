@@ -17,7 +17,7 @@ type Stream struct {
 	Name        string    `json:"name"`
 	CreatedAt   time.Time `json:"created_at"`
 	eventsQueue *list.List
-	eventsMap   map[string]struct{}
+	eventsMap   map[string]*list.Element
 }
 
 func (s Stream) WriteEvent(db DB, evt Event) error {
@@ -30,7 +30,13 @@ func (s Stream) WriteEvent(db DB, evt Event) error {
 				return err
 			}
 		}
-		return txn.Set(evt.key(), evt.value())
+		oneMonth := uint64(evt.CreatedAt.Add(time.Hour * 720).Unix())
+		entry := &badger.Entry{
+			Key:       evt.key(),
+			Value:     evt.value(),
+			ExpiresAt: oneMonth,
+		}
+		return txn.SetEntry(entry)
 	})
 	if err != nil {
 		logging.Logger.Debug("could not save stream to db", zap.Error(err))
@@ -41,27 +47,49 @@ func (s Stream) WriteEvent(db DB, evt Event) error {
 	_, found := s.eventsMap[string(evt.key())]
 	if !evt.Processed && !found {
 		s.eventsQueue.PushBack(evt)
-		s.eventsMap[string(evt.key())] = struct{}{}
+		s.eventsMap[string(evt.key())] = s.eventsQueue.Back()
 	}
 	return nil
 }
 
 func (s Stream) indexEvents(db DB) error {
 	logger := logging.Logger
-	events := make([]Event, 0)
-	return db.View(func(txn *badger.Txn) error {
+	key := fmt.Sprintf("event:%s:%d", s.ID, eventUnprocessedStatus)
+	logger.Info("events indexing started")
+	eventRes, err := s.fetchEvents(db, key)
+	if err != nil {
+		logger.Error("could not index events from db", zap.Error(err))
+		return err
+	}
+
+	// ensure correct events order
+	for i := len(eventRes) - 1; i >= 0; i-- {
+		item := eventRes[i]
+		_, found := s.eventsMap[string(item.key)]
+		if found {
+			continue
+		}
+		s.eventsQueue.PushFront(item.event)
+	}
+	logger.Info("events indexing finished")
+	return nil
+}
+
+type eventResult struct {
+	event Event
+	key   []byte
+}
+
+func (s Stream) fetchEvents(db DB, key string) ([]eventResult, error) {
+	logger := logging.Logger
+	eventRes := make([]eventResult, 0)
+	logger.Info("fetching events started")
+	err := db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
-
-		key := fmt.Sprintf("event:%s:%d", s.ID, eventUnprocessedStatus)
 		prefix := []byte(key)
-		logger.Info("events indexing started")
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 			item := it.Item()
-			_, found := s.eventsMap[string(item.Key())]
-			if found {
-				continue
-			}
 			err := item.Value(func(value []byte) error {
 				var evt Event
 				err := json.Unmarshal(value, &evt)
@@ -69,20 +97,21 @@ func (s Stream) indexEvents(db DB) error {
 					logger.Error("could not unmarshal event value from db", zap.Error(err))
 					return err
 				}
-				events = append(events, evt)
+				eventRes = append(eventRes, eventResult{event: evt, key: item.Key()})
 				return nil
 			})
 			if err != nil {
 				return err
 			}
 		}
-		// ensure correct events order
-		for i := len(events) - 1; i >= 0; i-- {
-			s.eventsQueue.PushFront(events[i])
-		}
-		logger.Info("events indexing finished")
 		return nil
 	})
+	if err != nil {
+		logger.Error("could not fetch events from db", zap.Error(err))
+		return []eventResult{}, err
+	}
+	logger.Info("fetching events finished")
+	return eventRes, nil
 }
 
 func (s Stream) key() []byte {

@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	healthOperation         = "health"
 	createStreamOperation   = "create_stream"
 	deleteStreamOperation   = "delete_stream"
 	getStreamInfoOperation  = "get_stream_info"
@@ -55,6 +56,14 @@ func NewRouter(b EventBus) Router {
 		getStreamInfoOperation: router.getStreamInfo(b),
 		writeEventOperation:    router.writeEvent(b),
 		processEventsOperation: router.processEvents(b),
+		healthOperation: func(w io.Writer, _ request) error {
+			transport.SendJSON(w, healthOperation, nil)
+			return nil
+		},
+		exitOperation: func(w io.Writer, _ request) error {
+			transport.SendJSON(w, exitOperation, nil)
+			return nil
+		},
 	}
 	return router
 }
@@ -75,20 +84,13 @@ func (router Router) Switch(w io.Writer, r io.Reader) (bool, error) {
 		"operation must be one of: '%s'",
 		strings.Join(ops, "', '"),
 	)
-
-	if req.Operation == "" {
-		transport.SendError(w, decodeOperation, notFoundErr)
-		return false, notFoundErr
-	}
-
-	if req.Operation == exitOperation {
-		return true, nil
-	}
-
 	operation, ok := router.operations[req.Operation]
 	if !ok {
 		transport.SendError(w, decodeOperation, notFoundErr)
 		return false, notFoundErr
+	}
+	if req.Operation == exitOperation {
+		return true, operation(w, req)
 	}
 	return false, operation(w, req)
 }

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/chill-and-code/event-bus/services"
@@ -25,7 +24,6 @@ func (router Router) createStream(bus streamCreator) func(io.Writer, request) er
 			return err
 		}
 
-		fmt.Println("stream name", body.StreamName)
 		s, err := bus.CreateStream(body.StreamName)
 		if err != nil {
 			transport.SendJSON(w, createStreamOperation, err)

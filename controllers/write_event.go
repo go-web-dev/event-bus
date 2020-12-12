@@ -13,7 +13,7 @@ type eventWriter interface {
 
 type writeEventRequest struct {
 	StreamName string          `json:"stream_name" type:"string"`
-	Event    json.RawMessage `json:"event" type:"[]byte"`
+	Event      json.RawMessage `json:"event" type:"[]byte"`
 }
 
 func (router Router) writeEvent(bus eventWriter) func(io.Writer, request) error {

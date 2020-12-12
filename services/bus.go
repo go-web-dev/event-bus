@@ -37,6 +37,7 @@ type Bus struct {
 
 func (b *Bus) Init() error {
 	logger := logging.Logger
+	logger.Info("initializing event bus with streams")
 	err := b.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
@@ -50,6 +51,8 @@ func (b *Bus) Init() error {
 					logger.Error("could not unmarshal stream value from db", zap.Error(err))
 					return err
 				}
+				stream.eventsQueue = list.New()
+				stream.eventsMap = map[string]struct{}{}
 				b.streams[stream.Name] = stream
 				return nil
 			})
@@ -75,12 +78,12 @@ func (b *Bus) CreateStream(streamName string) (Stream, error) {
 	if _, ok := b.streams[streamName]; ok {
 		return Stream{}, fmt.Errorf("stream: '%s' already exists", streamName)
 	}
-	fmt.Println(streamName)
 	s := Stream{
 		Name:      streamName,
 		ID:        uuid.New().String(),
 		CreatedAt: time.Now().UTC(),
-		events:     list.New(),
+		eventsQueue:     list.New(),
+		eventsMap: map[string]struct{}{},
 	}
 	err := b.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(s.key(), s.value())
@@ -90,6 +93,7 @@ func (b *Bus) CreateStream(streamName string) (Stream, error) {
 		return Stream{}, err
 	}
 	b.streams[streamName] = s
+	logger.Info("successfully created stream", zap.String("stream_id", s.ID))
 	return s, nil
 }
 
@@ -112,11 +116,12 @@ func (b *Bus) DeleteStream(streamName string) error {
 		return err
 	}
 	delete(b.streams, streamName)
-
+	logger.Info("successfully deleted stream", zap.String("stream_id", s.ID))
 	return nil
 }
 
 func (b *Bus) GetStreamInfo(streamName string) (Stream, error) {
+	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -124,17 +129,31 @@ func (b *Bus) GetStreamInfo(streamName string) (Stream, error) {
 	if !ok {
 		return Stream{}, fmt.Errorf("stream: '%s' not found", streamName)
 	}
+	logger.Info("successfully got stream info", zap.String("stream_id", s.ID))
 	return s, nil
 }
 
 func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
+	// add expiration when saving to db
+	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	stream, ok := b.streams[streamName]
 	if !ok {
 		return fmt.Errorf("stream: '%s' not found", streamName)
 	}
-	return stream.WriteEvent(b.db, body)
+	evt := Event{
+		ID:        uuid.New().String(),
+		StreamID:  stream.ID,
+		CreatedAt: time.Now().UTC(),
+		Body:      body,
+	}
+	err := stream.WriteEvent(b.db, evt)
+	if err != nil {
+		return err
+	}
+	logger.Info("successfully wrote event", zap.String("event_id", evt.ID))
+	return nil
 }
 
 type EventProcessor interface {
@@ -147,8 +166,10 @@ type EventProcessor interface {
 // add snapshot operation
 // add possibility reprocess a message
 // when processing events: 1) remove old key 2) add same key with prefix `processed` for easier retrieval
+// add more custom errors to hide internals
 
 func (b *Bus) ProcessEvents(streamName string, processor EventProcessor) error {
+	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -156,17 +177,35 @@ func (b *Bus) ProcessEvents(streamName string, processor EventProcessor) error {
 	if !ok {
 		return fmt.Errorf("stream: '%s' not found", streamName)
 	}
-	for {
-		element := stream.events.Front()
+
+	err := stream.indexEvents(b.db)
+	if err != nil {
+		logger.Debug("could not index stream events", zap.Error(err))
+		return err
+	}
+
+	logger.Info("events processing started")
+	for stream.eventsQueue.Len() > 0 {
+		element := stream.eventsQueue.Front()
 		if element == nil {
-			return nil
+			logger.Info("successfully processed all events")
+			break
 		}
+
 		evt := element.Value.(Event)
+		evt.Processed = true
 		err := processor.Process(evt)
 		if err != nil {
 			return err
 		}
-		evt.Processed = true
-		stream.events.Remove(element)
+
+		stream.eventsQueue.Remove(element)
+		delete(stream.eventsMap, string(evt.unprocessedKey()))
+		err = stream.WriteEvent(b.db, evt)
+		if err != nil {
+			return err
+		}
 	}
+	logger.Info("events processing finished")
+	return nil
 }

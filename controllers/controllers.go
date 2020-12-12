@@ -17,8 +17,8 @@ import (
 
 const (
 	createStreamOperation   = "create_stream"
-	getStreamInfoOperation  = "get_stream_info"
 	deleteStreamOperation   = "delete_stream"
+	getStreamInfoOperation  = "get_stream_info"
 	snapshotStreamOperation = "snapshot_stream"
 	writeEventOperation     = "write_event"
 	processEventsOperation  = "process_events"

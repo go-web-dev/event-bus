@@ -1,0 +1,9 @@
+{"operation": "create_stream", "body": {"stream_name": "steve"}}
+
+{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e1": "event 1 value"}}}
+{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e2": "event 2 value"}}}
+{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e3": "event 3 value"}}}
+{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e4": "event 4 value"}}}
+{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e5": "event 5 value"}}}
+
+{"operation": "process_events", "body": {"stream_name": "steve"}}

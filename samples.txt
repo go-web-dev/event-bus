@@ -5,8 +5,10 @@
 {"operation": "create_stream", "body": {"stream_name": "mike"}}
 
 {"operation": "delete_stream", "body": {"stream_name": "steve"}}
+{"operation": "delete_stream", "body": {"stream_name": "john"}}
 
 {"operation": "get_stream_info", "body": {"stream_name": "steve"}}
+{"operation": "get_stream_info", "body": {"stream_name": "john"}}
 
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e1": "event 1 value"}}}
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e2": "event 2 value"}}}
@@ -14,7 +16,11 @@
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e4": "event 4 value"}}}
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e5": "event 5 value"}}}
 
+{"operation": "write_event", "body": {"stream_name": "john", "event": {"e1": "event 1 value"}}}
+{"operation": "write_event", "body": {"stream_name": "john", "event": {"e2": "event 2 value"}}}
+
 {"operation": "process_events", "body": {"stream_name": "steve"}}
+{"operation": "process_events", "body": {"stream_name": "john"}}
 
 {"operation": "snapshot_db", "body": {"output": "backup-001"}}
 

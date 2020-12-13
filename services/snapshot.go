@@ -9,6 +9,7 @@ import (
 )
 
 func (b *Bus) SnapshotDB(output string) error {
+	// create directory and store backups with timestamps
 	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()

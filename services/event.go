@@ -20,20 +20,18 @@ type Event struct {
 	ID        string          `json:"id"`
 	CreatedAt time.Time       `json:"created_at"`
 	StreamID  string          `json:"stream_id"`
-	Processed bool            `json:"processed"`
 	Body      json.RawMessage `json:"body"`
 }
 
-func (e Event) key() []byte {
-	status := eventUnprocessedStatus
-	if e.Processed {
-		status = eventProcessedStatus
-	}
-	return []byte(fmt.Sprintf("event:%s:%d:%s:%s", e.StreamID, status, e.CreatedAt.Format(time.RFC3339), e.ID))
-}
-
-func (e Event) unprocessedKey() []byte {
-	return []byte(fmt.Sprintf("event:%s:%d:%s:%s", e.StreamID, eventUnprocessedStatus, e.CreatedAt.Format(time.RFC3339), e.ID))
+func (e Event) key(status int) []byte {
+	key := fmt.Sprintf(
+		"event:%s:%d:%s:%s",
+		e.StreamID,
+		status,
+		e.CreatedAt.Format(time.RFC3339),
+		e.ID,
+	)
+	return []byte(key)
 }
 
 func (e Event) value() []byte {
@@ -43,4 +41,8 @@ func (e Event) value() []byte {
 		return []byte{}
 	}
 	return bs
+}
+
+func (e Event) expiresAt() uint64 {
+	return uint64(e.CreatedAt.Add(time.Hour * 720).UnixNano())
 }

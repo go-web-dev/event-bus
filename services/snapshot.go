@@ -1,7 +1,9 @@
 package services
 
 import (
+	"fmt"
 	"os"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -9,13 +11,23 @@ import (
 )
 
 func (b *Bus) SnapshotDB(output string) error {
-	// create directory and store backups with timestamps
 	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	logger.Info("initiating database backup")
-	backupFile, err := os.Create(output)
+
+	var err error
+	if _, e := os.Stat(output); os.IsNotExist(e) {
+		err = os.Mkdir(output, os.ModePerm)
+	}
+	if err != nil {
+		logger.Error("could not create output directory", zap.Error(err))
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s/backup-%s", output, time.Now().UTC().Format(time.RFC3339))
+	backupFile, err := os.Create(fileName)
 	if err != nil {
 		logger.Error("could not create backup file", zap.Error(err))
 		return err

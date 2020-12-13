@@ -16,16 +16,16 @@ import (
 )
 
 const (
-	healthOperation         = "health"
-	createStreamOperation   = "create_stream"
-	deleteStreamOperation   = "delete_stream"
-	getStreamInfoOperation  = "get_stream_info"
-	writeEventOperation     = "write_event"
-	processEventsOperation  = "process_events"
-	retryEventsOperation    = "retry_events"
-	snapshotDBOperation     = "snapshot_db"
-	exitOperation           = "exit"
-	decodeOperation         = "decode_request"
+	healthOperation        = "health"
+	createStreamOperation  = "create_stream"
+	deleteStreamOperation  = "delete_stream"
+	getStreamInfoOperation = "get_stream_info"
+	writeEventOperation    = "write_event"
+	processEventsOperation = "process_events"
+	retryEventsOperation   = "retry_events"
+	snapshotDBOperation    = "snapshot_db"
+	exitOperation          = "exit"
+	decodeOperation        = "decode_request"
 )
 
 type request struct {
@@ -56,6 +56,7 @@ func NewRouter(b EventBus) Router {
 		getStreamInfoOperation: router.getStreamInfo(b),
 		writeEventOperation:    router.writeEvent(b),
 		processEventsOperation: router.processEvents(b),
+		retryEventsOperation:   router.retryEvents(b),
 		snapshotDBOperation:    router.snapshotDB(b),
 		healthOperation: func(w io.Writer, _ request) error {
 			transport.SendJSON(w, healthOperation, nil)

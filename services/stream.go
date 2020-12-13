@@ -41,8 +41,13 @@ func (s Stream) value() []byte {
 	return bs
 }
 
-func (s *Stream) processEvents(d db, processor EventProcessor) error {
-	prefix := fmt.Sprintf("event:%s:%d", s.ID, eventUnprocessedStatus)
+func (s *Stream) processEvents(d db, processor EventProcessor, retry bool) error {
+	logger := logging.Logger
+	status := eventUnprocessedStatus
+	if retry {
+		status = eventRetryStatus
+	}
+	prefix := fmt.Sprintf("event:%s:%d", s.ID, status)
 	stream := d.NewStream()
 	stream.NumGo = 16
 	stream.Prefix = []byte(prefix)
@@ -57,11 +62,11 @@ func (s *Stream) processEvents(d db, processor EventProcessor) error {
 			err = processor.Process(evt)
 			if err != nil {
 				// mark event as retry
+				logger.Debug("retrying event later", zap.String("event_id", evt.ID))
 				e := d.set(evt.key(eventRetryStatus), evt.value(), evt.expiresAt())
 				if e != nil {
 					return e
 				}
-				return err
 			} else {
 				// mark event as processed
 				e := d.set(evt.key(eventProcessedStatus), evt.value(), evt.expiresAt())
@@ -69,10 +74,18 @@ func (s *Stream) processEvents(d db, processor EventProcessor) error {
 					return e
 				}
 			}
-			// remove old unprocessed event
-			e := d.delete(evt.key(eventUnprocessedStatus))
-			if e != nil {
-				return e
+
+			// remove old unprocessed/retry events
+			if retry {
+				e := d.delete(evt.key(eventRetryStatus))
+				if e != nil {
+					return e
+				}
+			} else {
+				e := d.delete(evt.key(eventUnprocessedStatus))
+				if e != nil {
+					return e
+				}
 			}
 		}
 		return nil

@@ -22,6 +22,8 @@
 {"operation": "process_events", "body": {"stream_name": "steve"}}
 {"operation": "process_events", "body": {"stream_name": "john"}}
 
+{"operation": "retry_events", "body": {"stream_name": "steve"}}
+
 {"operation": "snapshot_db", "body": {"output": "backups"}}
 
 {"operation": "exit"}

@@ -144,12 +144,7 @@ type EventProcessor interface {
 	Process(event Event) error
 }
 
-// add possibility reprocess a message
-// add more custom errors to hide internals
-// add backups to a directory + name files with timestamp
-// add possibility to snapshot individual streams
-
-func (b *Bus) ProcessEvents(streamName string, processor EventProcessor) error {
+func (b *Bus) ProcessEvents(streamName string, processor EventProcessor, retry bool) error {
 	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -160,7 +155,7 @@ func (b *Bus) ProcessEvents(streamName string, processor EventProcessor) error {
 	}
 
 	logger.Info("events processing started", zap.String("stream_id", stream.ID))
-	err = stream.processEvents(b.db, processor)
+	err = stream.processEvents(b.db, processor, retry)
 	if err != nil {
 		logger.Error("could not process events", zap.Error(err))
 		return err

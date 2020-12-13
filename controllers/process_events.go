@@ -8,7 +8,7 @@ import (
 )
 
 type eventProcessor interface {
-	ProcessEvents(streamName string, processor services.EventProcessor) error
+	ProcessEvents(streamName string, processor services.EventProcessor, retry bool) error
 }
 
 type processEventsRequest struct {
@@ -34,7 +34,7 @@ func (router Router) processEvents(bus eventProcessor) func(io.Writer, request) 
 		}
 
 		p := processor{w: w}
-		err = bus.ProcessEvents(body.StreamName, p)
+		err = bus.ProcessEvents(body.StreamName, p, false)
 		if err != nil {
 			transport.SendError(w, processEventsOperation, err)
 			return err

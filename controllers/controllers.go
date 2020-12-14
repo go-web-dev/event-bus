@@ -20,6 +20,7 @@ const (
 	createStreamOperation  = "create_stream"
 	deleteStreamOperation  = "delete_stream"
 	getStreamInfoOperation = "get_stream_info"
+	getStreamEvents        = "get_stream_events"
 	writeEventOperation    = "write_event"
 	markEventOperation     = "mark_event"
 	processEventsOperation = "process_events"

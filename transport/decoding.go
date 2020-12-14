@@ -28,8 +28,8 @@ func DecodeFields(v interface{}) []models.RequiredField {
 			isRequired = false
 		}
 		field := models.RequiredField{
-			Name: jsonTag[0],
-			Type: typeTag[0],
+			Name:     jsonTag[0],
+			Type:     typeTag[0],
 			Required: isRequired,
 		}
 		fields = append(fields, field)

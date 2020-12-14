@@ -18,7 +18,7 @@ type router interface {
 }
 
 type Settings struct {
-	Addr string
+	Addr   string
 	Router router
 }
 

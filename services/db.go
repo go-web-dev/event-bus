@@ -14,8 +14,7 @@ import (
 )
 
 type DB interface {
-	View(func(txn *badger.Txn) error) error
-	Update(func(txn *badger.Txn) error) error
+	NewTransaction(update bool) *badger.Txn
 	Backup(w io.Writer, since uint64) (uint64, error)
 	NewStream() *badger.Stream
 }
@@ -29,9 +28,23 @@ type fetchResult struct {
 	key  []byte
 }
 
-func (d db) fetch(key string, obj interface{}, cb func(fetchResult)) error {
+type transactionFunc func(txn *badger.Txn) error
+
+func (d db) txn(update bool, transactions ...transactionFunc) error {
+	transaction := d.NewTransaction(update)
+	for _, txn := range transactions {
+		err := txn(transaction)
+		if err != nil {
+			transaction.Discard()
+			return err
+		}
+	}
+	return transaction.Commit()
+}
+
+func (d db) fetch(key string, obj interface{}, cb func(fetchResult)) transactionFunc {
 	logger := logging.Logger
-	return d.View(func(txn *badger.Txn) error {
+	return func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		prefix := []byte(key)
@@ -55,11 +68,11 @@ func (d db) fetch(key string, obj interface{}, cb func(fetchResult)) error {
 			}
 		}
 		return nil
-	})
+	}
 }
 
-func (d db) delete(keys ...[]byte) error {
-	return d.Update(func(txn *badger.Txn) error {
+func (d db) delete(keys ...[]byte) transactionFunc {
+	return func(txn *badger.Txn) error {
 		for _, key := range keys {
 			err := txn.Delete(key)
 			if err != nil {
@@ -67,18 +80,18 @@ func (d db) delete(keys ...[]byte) error {
 			}
 		}
 		return nil
-	})
+	}
 }
 
-func (d db) set(key, value []byte, expiresAt uint64) error {
-	return d.Update(func(txn *badger.Txn) error {
+func (d db) set(key, value []byte, expiresAt uint64) transactionFunc {
+	return func(txn *badger.Txn) error {
 		entry := &badger.Entry{
 			Key:       key,
 			Value:     value,
 			ExpiresAt: expiresAt,
 		}
 		return txn.SetEntry(entry)
-	})
+	}
 }
 
 func (d db) streamEvents(key string, chooseKeyFunc func(item *badger.Item) bool) ([]models.Event, error) {

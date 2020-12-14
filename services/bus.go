@@ -38,14 +38,17 @@ func (b *Bus) Init() error {
 
 	logger.Info("initializing event bus with streams")
 	var streamVar models.Stream
-	err := b.db.fetch("stream:", &streamVar, func(res fetchResult) {
+	txn := b.db.fetch("stream:", &streamVar, func(res fetchResult) {
 		stream := res.item.(*models.Stream)
 		b.streams[stream.Name] = *stream
 	})
+	err := b.db.txn(false, txn)
 	if err != nil {
 		logger.Error("could not fetch streams from db", zap.Error(err))
 		return err
 	}
+
+	b.db.streamEvents("event:", nil)
 
 	logger.Info("successfully initialized event bus with streams")
 	return nil
@@ -64,7 +67,8 @@ func (b *Bus) CreateStream(streamName string) (models.Stream, error) {
 		ID:        uuid.New().String(),
 		CreatedAt: time.Now().UTC(),
 	}
-	err := b.db.set(stream.Key(), stream.Value(), 0)
+	txn := b.db.set(stream.Key(), stream.Value(), 0)
+	err := b.db.txn(true, txn)
 	if err != nil {
 		logger.Debug("could not save stream to db", zap.Error(err))
 		return models.Stream{}, err
@@ -87,17 +91,13 @@ func (b *Bus) DeleteStream(streamName string) error {
 	key := fmt.Sprintf("event:%s", stream.ID)
 	keysToDelete := make([][]byte, 0)
 	var eventVar models.Event
-	err = b.db.fetch(key, &eventVar, func(res fetchResult) {
+	fetchTxn := b.db.fetch(key, &eventVar, func(res fetchResult) {
 		keysToDelete = append(keysToDelete, res.key)
 	})
+	deleteTxn := b.db.delete(append(keysToDelete, stream.Key())...)
+	err = b.db.txn(true, fetchTxn, deleteTxn)
 	if err != nil {
-		logger.Error("could not fetch events from db", zap.Error(err))
-		return err
-	}
-
-	err = b.db.delete(append(keysToDelete, stream.Key())...)
-	if err != nil {
-		logger.Debug("could not delete stream from db", zap.Error(err))
+		logger.Debug("could not delete stream", zap.Error(err))
 		return err
 	}
 
@@ -136,7 +136,8 @@ func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
 		CreatedAt: time.Now().UTC(),
 		Body:      body,
 	}
-	err = b.db.set(evt.Key(models.EventUnprocessedStatus), evt.Value(), evt.ExpiresAt())
+	txn := b.db.set(evt.Key(models.EventUnprocessedStatus), evt.Value(), evt.ExpiresAt())
+	err = b.db.txn(true, txn)
 	if err != nil {
 		logger.Debug("could not write event to db", zap.Error(err))
 		return err
@@ -166,16 +167,20 @@ func (b *Bus) MarkEvent(eventID string, status int) error {
 	}
 	evt := events[0]
 
-	// run in a transaction for safety
-	err = b.db.set(evt.Key(status), evt.Value(), evt.ExpiresAt())
-	if err != nil {
-		logger.Error("could mark event new status", zap.Error(err))
-		return err
+	keys := [][]byte{
+		evt.Key(models.EventUnprocessedStatus),
+		evt.Key(models.EventProcessedStatus),
+		evt.Key(models.EventRetryStatus),
 	}
-
-	err = b.db.delete(evt.Key(models.EventUnprocessedStatus))
+	deleteKeysTxn := b.db.delete(keys...)
+	markEventTxn := b.db.set(evt.Key(status), evt.Value(), evt.ExpiresAt())
+	err = b.db.txn(true, deleteKeysTxn, markEventTxn)
 	if err != nil {
-		logger.Error("could not delete old unprocessed key", zap.Error(err))
+		logger.Error(
+			"could not mark event",
+			zap.Error(err),
+			zap.String("event_id", eventID),
+		)
 		return err
 	}
 

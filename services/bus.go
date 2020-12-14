@@ -94,10 +94,16 @@ func (b *Bus) DeleteStream(streamName string) error {
 	fetchTxn := b.db.fetch(key, &eventVar, func(res fetchResult) {
 		keysToDelete = append(keysToDelete, res.key)
 	})
-	deleteTxn := b.db.delete(append(keysToDelete, stream.Key())...)
-	err = b.db.txn(true, fetchTxn, deleteTxn)
+	err = b.db.txn(false, fetchTxn)
 	if err != nil {
-		logger.Debug("could not delete stream", zap.Error(err))
+		logger.Debug("could not fetch stream events", zap.Error(err))
+		return err
+	}
+
+	deleteTxn := b.db.delete(append(keysToDelete, stream.Key())...)
+	err = b.db.txn(true, deleteTxn)
+	if err != nil {
+		logger.Debug("could not delete stream and its events", zap.Error(err))
 		return err
 	}
 
@@ -135,6 +141,7 @@ func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
 		StreamID:  stream.ID,
 		CreatedAt: time.Now().UTC(),
 		Body:      body,
+		Status:    models.EventUnprocessedStatus,
 	}
 	txn := b.db.set(evt.Key(models.EventUnprocessedStatus), evt.Value(), evt.ExpiresAt())
 	err = b.db.txn(true, txn)
@@ -166,6 +173,7 @@ func (b *Bus) MarkEvent(eventID string, status int) error {
 		return fmt.Errorf("event '%s' not found", eventID)
 	}
 	evt := events[0]
+	evt.Status = status
 
 	keys := [][]byte{
 		evt.Key(models.EventUnprocessedStatus),

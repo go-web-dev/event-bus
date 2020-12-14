@@ -16,12 +16,14 @@ const (
 	EventRetryStatus       = 2
 )
 
+// client_id client_secret list
+
 type Event struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	StreamID  string    `json:"stream_id"`
-	//Status    int             `json:"status"`
-	Body json.RawMessage `json:"body"`
+	ID        string          `json:"id"`
+	CreatedAt time.Time       `json:"created_at"`
+	StreamID  string          `json:"stream_id"`
+	Status    int             `json:"status"`
+	Body      json.RawMessage `json:"body"`
 }
 
 func (e Event) Key(status int) []byte {

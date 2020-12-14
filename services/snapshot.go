@@ -37,6 +37,8 @@ func (b *Bus) SnapshotDB(output string) error {
 	// version increments on every update
 	// the file output is a protobuf encoded list
 	// you can decode it using db.Load()
+
+	// add custom writer that writes to connection as well
 	n, err := b.db.Backup(backupFile, 1)
 	if err != nil {
 		logger.Error("could not backup database", zap.Error(err))

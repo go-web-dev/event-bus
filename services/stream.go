@@ -59,6 +59,12 @@ func (s *Stream) processEvents(d db, processor EventProcessor, retry bool) error
 			if err != nil {
 				return err
 			}
+			// add possibility for the client to mark event: processed | retry
+			// via a bidirectional server client communication => client event processor
+			// OR add individual mark operation that marks individual events
+			// and remove functionality that marks automatically
+
+			// send events as single slice adn get rid of processor
 			err = processor.Process(evt)
 			if err != nil {
 				// mark event as retry

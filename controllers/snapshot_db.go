@@ -14,6 +14,10 @@ type snapshotDBRequest struct {
 	Output string `json:"output" type:"string"`
 }
 
+// snapshot individual stream
+// don't write to server disk, let the client choose and write on its own
+// just send down the protobuf stream
+
 func (router Router) snapshotDB(bus dbSnapshotter) func(io.Writer, request) error {
 	return func(w io.Writer, r request) error {
 		var body snapshotDBRequest

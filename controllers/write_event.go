@@ -30,6 +30,7 @@ func (router Router) writeEvent(bus eventWriter) func(io.Writer, request) error 
 			transport.SendJSON(w, writeEventOperation, err)
 			return err
 		}
+
 		transport.SendJSON(w, writeEventOperation, nil)
 		return nil
 	}

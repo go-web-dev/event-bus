@@ -41,7 +41,7 @@ func (s Stream) value() []byte {
 	return bs
 }
 
-func (s *Stream) processEvents(d db, processor EventProcessor, retry bool) error {
+func (s *Stream) processEvents(d db, retry bool) ([]Event, error) {
 	logger := logging.Logger
 	status := eventUnprocessedStatus
 	if retry {
@@ -51,54 +51,23 @@ func (s *Stream) processEvents(d db, processor EventProcessor, retry bool) error
 	stream := d.NewStream()
 	stream.NumGo = 16
 	stream.Prefix = []byte(prefix)
+	events := make([]Event, 0)
 
 	stream.Send = func(list *pb.KVList) error {
 		for _, v := range list.Kv {
 			var evt Event
 			err := json.Unmarshal(v.Value, &evt)
 			if err != nil {
-				return err
+				logger.Debug("could not unmarshal message", zap.Error(err))
+				continue
 			}
-			// add possibility for the client to mark event: processed | retry
-			// via a bidirectional server client communication => client event processor
-			// OR add individual mark operation that marks individual events
-			// and remove functionality that marks automatically
-
-			// send events as single slice adn get rid of processor
-			err = processor.Process(evt)
-			if err != nil {
-				// mark event as retry
-				logger.Debug("retrying event later", zap.String("event_id", evt.ID))
-				e := d.set(evt.key(eventRetryStatus), evt.value(), evt.expiresAt())
-				if e != nil {
-					return e
-				}
-			} else {
-				// mark event as processed
-				e := d.set(evt.key(eventProcessedStatus), evt.value(), evt.expiresAt())
-				if e != nil {
-					return e
-				}
-			}
-
-			// remove old unprocessed/retry events
-			if retry {
-				e := d.delete(evt.key(eventRetryStatus))
-				if e != nil {
-					return e
-				}
-			} else {
-				e := d.delete(evt.key(eventUnprocessedStatus))
-				if e != nil {
-					return e
-				}
-			}
+			events = append(events, evt)
 		}
 		return nil
 	}
 
 	if err := stream.Orchestrate(context.Background()); err != nil {
-		return err
+		return []Event{}, err
 	}
-	return nil
+	return events, nil
 }

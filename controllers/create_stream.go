@@ -15,6 +15,10 @@ type createStreamRequest struct {
 	StreamName string `json:"stream_name" type:"string"`
 }
 
+type createStreamResponse struct {
+	Stream services.Stream `json:"stream"`
+}
+
 func (router Router) createStream(bus streamCreator) func(io.Writer, request) error {
 	return func(w io.Writer, r request) error {
 		var body createStreamRequest
@@ -29,7 +33,11 @@ func (router Router) createStream(bus streamCreator) func(io.Writer, request) er
 			transport.SendJSON(w, createStreamOperation, err)
 			return err
 		}
-		transport.SendJSON(w, createStreamOperation, s)
+
+		res := createStreamResponse{
+			Stream: s,
+		}
+		transport.SendJSON(w, createStreamOperation, res)
 		return nil
 	}
 }

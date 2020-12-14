@@ -7,17 +7,12 @@ import (
 	"github.com/chill-and-code/event-bus/transport"
 )
 
-type retrier struct {
-	w io.Writer
-}
-
-func (p retrier) Process(evt services.Event) error {
-	transport.SendJSON(p.w, retryEventsOperation, evt)
-	return nil
-}
-
 type retryEventsRequest struct {
 	StreamName string `json:"stream_name" type:"string"`
+}
+
+type retryEventsResponse struct {
+	Events []services.Event `json:"events"`
 }
 
 func (router Router) retryEvents(bus eventProcessor) func(io.Writer, request) error {
@@ -29,12 +24,16 @@ func (router Router) retryEvents(bus eventProcessor) func(io.Writer, request) er
 			return err
 		}
 
-		p := retrier{w: w}
-		err = bus.ProcessEvents(body.StreamName, p, true)
+		events, err := bus.ProcessEvents(body.StreamName, true)
 		if err != nil {
 			transport.SendError(w, retryEventsOperation, err)
 			return err
 		}
+
+		res := retryEventsResponse{
+			Events: events,
+		}
+		transport.SendJSON(w, retryEventsOperation, res)
 		return nil
 	}
 }

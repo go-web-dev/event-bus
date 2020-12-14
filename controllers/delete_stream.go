@@ -28,6 +28,7 @@ func (router Router) deleteStream(bus streamDeleter) func(io.Writer, request) er
 			transport.SendJSON(w, deleteStreamOperation, err)
 			return err
 		}
+
 		transport.SendJSON(w, deleteStreamOperation, nil)
 		return nil
 	}

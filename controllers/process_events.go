@@ -8,20 +8,15 @@ import (
 )
 
 type eventProcessor interface {
-	ProcessEvents(streamName string, processor services.EventProcessor, retry bool) error
+	ProcessEvents(streamName string, retry bool) ([]services.Event, error)
 }
 
 type processEventsRequest struct {
 	StreamName string `json:"stream_name" type:"string"`
 }
 
-type processor struct {
-	w io.Writer
-}
-
-func (p processor) Process(evt services.Event) error {
-	transport.SendJSON(p.w, processEventsOperation, evt)
-	return nil
+type processEventsResponse struct {
+	Events []services.Event `json:"events"`
 }
 
 func (router Router) processEvents(bus eventProcessor) func(io.Writer, request) error {
@@ -33,12 +28,16 @@ func (router Router) processEvents(bus eventProcessor) func(io.Writer, request) 
 			return err
 		}
 
-		p := processor{w: w}
-		err = bus.ProcessEvents(body.StreamName, p, false)
+		events, err := bus.ProcessEvents(body.StreamName, false)
 		if err != nil {
 			transport.SendError(w, processEventsOperation, err)
 			return err
 		}
+
+		res := processEventsResponse{
+			Events: events,
+		}
+		transport.SendJSON(w, processEventsOperation, res)
 		return nil
 	}
 }

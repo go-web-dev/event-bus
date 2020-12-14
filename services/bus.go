@@ -142,28 +142,24 @@ func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
 	return nil
 }
 
-type EventProcessor interface {
-	Process(event Event) error
-}
-
-func (b *Bus) ProcessEvents(streamName string, processor EventProcessor, retry bool) error {
+func (b *Bus) ProcessEvents(streamName string, retry bool) ([]Event, error) {
 	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	stream, err := b.streamLookup(streamName)
 	if err != nil {
-		return err
+		return []Event{}, err
 	}
 
 	logger.Info("events processing started", zap.String("stream_id", stream.ID))
-	err = stream.processEvents(b.db, processor, retry)
+	events, err := stream.processEvents(b.db, retry)
 	if err != nil {
 		logger.Error("could not process events", zap.Error(err))
-		return err
+		return []Event{}, err
 	}
 	logger.Info("events processing finished", zap.String("stream_id", stream.ID))
-	return nil
+	return events, nil
 }
 
 func (b *Bus) streamLookup(streamName string) (Stream, error) {

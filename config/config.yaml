@@ -1,0 +1,7 @@
+auth:
+  go-client:
+    client_id: "dope_go_client_id"
+    client_secret: "dope_go_client_secret"
+  expenses-rest-api-client:
+    client_id: "dope_expenses_rest_api_client_id"
+    client_secret: "dope_expenses_rest_api_client_secret"

@@ -45,6 +45,9 @@ something like `telnet` to talk over TCP.
 {"operation": "get_stream_info", "body": {"stream_name": "steve"}}
 {"operation": "get_stream_info", "body": {"stream_name": "john"}}
 
+{"operation": "get_stream_events", "body": {"stream_name": "steve"}}
+{"operation": "get_stream_events", "body": {"stream_name": "john"}}
+
 {"operation": "snapshot_stream", "body": {"stream_name": "steve"}}
 {"operation": "snapshot_stream", "body": {"stream_name": "john"}}
 

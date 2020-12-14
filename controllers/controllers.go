@@ -16,18 +16,18 @@ import (
 )
 
 const (
-	healthOperation         = "health"
-	createStreamOperation   = "create_stream"
-	deleteStreamOperation   = "delete_stream"
-	getStreamInfoOperation  = "get_stream_info"
-	getStreamEvents         = "get_stream_events"
-	snapshotStreamOperation = "snapshot_stream"
-	writeEventOperation     = "write_event"
-	markEventOperation      = "mark_event"
-	processEventsOperation  = "process_events"
-	retryEventsOperation    = "retry_events"
-	exitOperation           = "exit"
-	decodeOperation         = "decode_request"
+	healthOperation          = "health"
+	createStreamOperation    = "create_stream"
+	deleteStreamOperation    = "delete_stream"
+	getStreamInfoOperation   = "get_stream_info"
+	getStreamEventsOperation = "get_stream_events"
+	snapshotStreamOperation  = "snapshot_stream"
+	writeEventOperation      = "write_event"
+	markEventOperation       = "mark_event"
+	processEventsOperation   = "process_events"
+	retryEventsOperation     = "retry_events"
+	exitOperation            = "exit"
+	decodeOperation          = "decode_request"
 )
 
 type request struct {
@@ -39,6 +39,7 @@ type EventBus interface {
 	streamCreator
 	streamDeleter
 	streamInfoGetter
+	streamEventsGetter
 	streamSnapshotter
 	eventWriter
 	eventMarker
@@ -54,14 +55,15 @@ type Router struct {
 func NewRouter(b EventBus) Router {
 	router := Router{}
 	router.operations = map[string]operator{
-		createStreamOperation:   router.createStream(b),
-		deleteStreamOperation:   router.deleteStream(b),
-		getStreamInfoOperation:  router.getStreamInfo(b),
-		snapshotStreamOperation: router.snapshotStream(b),
-		writeEventOperation:     router.writeEvent(b),
-		markEventOperation:      router.markEvent(b),
-		processEventsOperation:  router.processEvents(b),
-		retryEventsOperation:    router.retryEvents(b),
+		createStreamOperation:    router.createStream(b),
+		deleteStreamOperation:    router.deleteStream(b),
+		getStreamInfoOperation:   router.getStreamInfo(b),
+		getStreamEventsOperation: router.getStreamEvents(b),
+		snapshotStreamOperation:  router.snapshotStream(b),
+		writeEventOperation:      router.writeEvent(b),
+		markEventOperation:       router.markEvent(b),
+		processEventsOperation:   router.processEvents(b),
+		retryEventsOperation:     router.retryEvents(b),
 		healthOperation: func(w io.Writer, _ request) error {
 			transport.SendJSON(w, healthOperation, nil)
 			return nil

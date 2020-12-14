@@ -125,6 +125,27 @@ func (b *Bus) GetStreamInfo(streamName string) (models.Stream, error) {
 	return stream, nil
 }
 
+func (b *Bus) GetStreamEvents(streamName string) ([]models.Event, error) {
+	logger := logging.Logger
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	stream, err := b.streamLookup(streamName)
+	if err != nil {
+		return []models.Event{}, err
+	}
+
+	logger.Info("getting all stream events", zap.String("stream_id", stream.ID))
+	key := fmt.Sprintf("event:%s", stream.ID)
+	events, err := b.db.streamEvents(key, nil)
+	if err != nil {
+		logger.Error("could not get stream events", zap.Error(err))
+		return []models.Event{}, err
+	}
+	logger.Info("successfully got all stream events", zap.String("stream_id", stream.ID))
+	return events, nil
+}
+
 func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
 	logger := logging.Logger
 	b.mu.Lock()

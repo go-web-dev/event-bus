@@ -45,6 +45,9 @@ something like `telnet` to talk over TCP.
 {"operation": "get_stream_info", "body": {"stream_name": "steve"}}
 {"operation": "get_stream_info", "body": {"stream_name": "john"}}
 
+{"operation": "snapshot_stream", "body": {"stream_name": "steve"}}
+{"operation": "snapshot_stream", "body": {"stream_name": "john"}}
+
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e1": "event 1 value"}}}
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e2": "event 2 value"}}}
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e3": "event 3 value"}}}
@@ -62,8 +65,6 @@ something like `telnet` to talk over TCP.
 
 {"operation": "mark_event", "body": {"event_id": "1b78ca67-d916-4059-a299-1ebf49664eb2", "status": 1}}
 {"operation": "mark_event", "body": {"event_id": "7f85f2c4-4a5d-42fb-b24e-30ec894e053a", "status": 2}}
-
-{"operation": "snapshot_db", "body": {"output": "backups"}}
 
 {"operation": "exit"}
 ```

@@ -3,7 +3,7 @@ package controllers
 import (
 	"io"
 
-	"github.com/chill-and-code/event-bus/services"
+	"github.com/chill-and-code/event-bus/models"
 	"github.com/chill-and-code/event-bus/transport"
 )
 
@@ -12,7 +12,7 @@ type retryEventsRequest struct {
 }
 
 type retryEventsResponse struct {
-	Events []services.Event `json:"events"`
+	Events []models.Event `json:"events"`
 }
 
 func (router Router) retryEvents(bus eventProcessor) func(io.Writer, request) error {

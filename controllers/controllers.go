@@ -21,6 +21,7 @@ const (
 	deleteStreamOperation  = "delete_stream"
 	getStreamInfoOperation = "get_stream_info"
 	writeEventOperation    = "write_event"
+	markEventOperation     = "mark_event"
 	processEventsOperation = "process_events"
 	retryEventsOperation   = "retry_events"
 	snapshotDBOperation    = "snapshot_db"
@@ -38,6 +39,7 @@ type EventBus interface {
 	streamDeleter
 	streamInfoGetter
 	eventWriter
+	eventMarker
 	eventProcessor
 	dbSnapshotter
 }
@@ -55,6 +57,7 @@ func NewRouter(b EventBus) Router {
 		deleteStreamOperation:  router.deleteStream(b),
 		getStreamInfoOperation: router.getStreamInfo(b),
 		writeEventOperation:    router.writeEvent(b),
+		markEventOperation:     router.markEvent(b),
 		processEventsOperation: router.processEvents(b),
 		retryEventsOperation:   router.retryEvents(b),
 		snapshotDBOperation:    router.snapshotDB(b),

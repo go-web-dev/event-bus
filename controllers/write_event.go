@@ -21,13 +21,13 @@ func (router Router) writeEvent(bus eventWriter) func(io.Writer, request) error 
 		var body writeEventRequest
 		err := parseReq(r, &body)
 		if err != nil {
-			transport.SendJSON(w, writeEventOperation, err)
+			transport.SendError(w, writeEventOperation, err)
 			return err
 		}
 
 		err = bus.WriteEvent(body.StreamName, body.Event)
 		if err != nil {
-			transport.SendJSON(w, writeEventOperation, err)
+			transport.SendError(w, writeEventOperation, err)
 			return err
 		}
 

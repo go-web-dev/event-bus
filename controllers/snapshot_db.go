@@ -23,13 +23,13 @@ func (router Router) snapshotDB(bus dbSnapshotter) func(io.Writer, request) erro
 		var body snapshotDBRequest
 		err := parseReq(r, &body)
 		if err != nil {
-			transport.SendJSON(w, snapshotDBOperation, err)
+			transport.SendError(w, snapshotDBOperation, err)
 			return err
 		}
 
 		err = bus.SnapshotDB(body.Output)
 		if err != nil {
-			transport.SendJSON(w, snapshotDBOperation, err)
+			transport.SendError(w, snapshotDBOperation, err)
 			return err
 		}
 		transport.SendJSON(w, snapshotDBOperation, nil)

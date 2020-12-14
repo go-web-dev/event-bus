@@ -3,12 +3,12 @@ package controllers
 import (
 	"io"
 
-	"github.com/chill-and-code/event-bus/services"
+	"github.com/chill-and-code/event-bus/models"
 	"github.com/chill-and-code/event-bus/transport"
 )
 
 type eventProcessor interface {
-	ProcessEvents(streamName string, retry bool) ([]services.Event, error)
+	ProcessEvents(streamName string, retry bool) ([]models.Event, error)
 }
 
 type processEventsRequest struct {
@@ -16,7 +16,7 @@ type processEventsRequest struct {
 }
 
 type processEventsResponse struct {
-	Events []services.Event `json:"events"`
+	Events []models.Event `json:"events"`
 }
 
 func (router Router) processEvents(bus eventProcessor) func(io.Writer, request) error {

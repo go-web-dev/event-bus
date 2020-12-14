@@ -16,6 +16,8 @@
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e4": "event 4 value"}}}
 {"operation": "write_event", "body": {"stream_name": "steve", "event": {"e5": "event 5 value"}}}
 
+{"operation": "mark_event", "body": {"event_id": "1b78ca67-d916-4059-a299-1ebf49664eb2", "status": 1}}
+
 {"operation": "write_event", "body": {"stream_name": "john", "event": {"e1": "event 1 value"}}}
 {"operation": "write_event", "body": {"stream_name": "john", "event": {"e2": "event 2 value"}}}
 

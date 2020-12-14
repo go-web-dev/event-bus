@@ -3,12 +3,12 @@ package controllers
 import (
 	"io"
 
-	"github.com/chill-and-code/event-bus/services"
+	"github.com/chill-and-code/event-bus/models"
 	"github.com/chill-and-code/event-bus/transport"
 )
 
 type streamInfoGetter interface {
-	GetStreamInfo(streamName string) (services.Stream, error)
+	GetStreamInfo(streamName string) (models.Stream, error)
 }
 
 type getStreamInfoRequest struct {
@@ -16,7 +16,7 @@ type getStreamInfoRequest struct {
 }
 
 type getStreamInfoResponse struct {
-	Stream services.Stream `json:"stream"`
+	Stream models.Stream `json:"stream"`
 }
 
 func (router Router) getStreamInfo(bus streamInfoGetter) func(io.Writer, request) error {
@@ -24,13 +24,13 @@ func (router Router) getStreamInfo(bus streamInfoGetter) func(io.Writer, request
 		var body getStreamInfoRequest
 		err := parseReq(r, &body)
 		if err != nil {
-			transport.SendJSON(w, getStreamInfoOperation, err)
+			transport.SendError(w, getStreamInfoOperation, err)
 			return err
 		}
 
 		s, err := bus.GetStreamInfo(body.StreamName)
 		if err != nil {
-			transport.SendJSON(w, getStreamInfoOperation, err)
+			transport.SendError(w, getStreamInfoOperation, err)
 			return err
 		}
 

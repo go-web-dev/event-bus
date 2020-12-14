@@ -1,4 +1,4 @@
-package services
+package models
 
 import (
 	"encoding/json"
@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	eventUnprocessedStatus = 0
-	eventProcessedStatus   = 1
-	eventRetryStatus       = 2
+	EventUnprocessedStatus = 0
+	EventProcessedStatus   = 1
+	EventRetryStatus       = 2
 )
 
 type Event struct {
@@ -23,7 +23,7 @@ type Event struct {
 	Body      json.RawMessage `json:"body"`
 }
 
-func (e Event) key(status int) []byte {
+func (e Event) Key(status int) []byte {
 	key := fmt.Sprintf(
 		"event:%s:%d:%s:%s",
 		e.StreamID,
@@ -34,7 +34,7 @@ func (e Event) key(status int) []byte {
 	return []byte(key)
 }
 
-func (e Event) value() []byte {
+func (e Event) Value() []byte {
 	bs, err := json.Marshal(e)
 	if err != nil {
 		logging.Logger.Debug("could not marshal event", zap.Error(err))
@@ -43,6 +43,6 @@ func (e Event) value() []byte {
 	return bs
 }
 
-func (e Event) expiresAt() uint64 {
+func (e Event) ExpiresAt() uint64 {
 	return uint64(e.CreatedAt.Add(time.Hour * 720).UnixNano())
 }

@@ -19,13 +19,13 @@ func (router Router) deleteStream(bus streamDeleter) func(io.Writer, request) er
 		var body deleteStreamRequest
 		err := parseReq(r, &body)
 		if err != nil {
-			transport.SendJSON(w, deleteStreamOperation, err)
+			transport.SendError(w, deleteStreamOperation, err)
 			return err
 		}
 
 		err = bus.DeleteStream(body.StreamName)
 		if err != nil {
-			transport.SendJSON(w, deleteStreamOperation, err)
+			transport.SendError(w, deleteStreamOperation, err)
 			return err
 		}
 

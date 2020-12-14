@@ -3,12 +3,12 @@ package controllers
 import (
 	"io"
 
-	"github.com/chill-and-code/event-bus/services"
+	"github.com/chill-and-code/event-bus/models"
 	"github.com/chill-and-code/event-bus/transport"
 )
 
 type streamCreator interface {
-	CreateStream(streamName string) (services.Stream, error)
+	CreateStream(streamName string) (models.Stream, error)
 }
 
 type createStreamRequest struct {
@@ -16,7 +16,7 @@ type createStreamRequest struct {
 }
 
 type createStreamResponse struct {
-	Stream services.Stream `json:"stream"`
+	Stream models.Stream `json:"stream"`
 }
 
 func (router Router) createStream(bus streamCreator) func(io.Writer, request) error {
@@ -24,13 +24,13 @@ func (router Router) createStream(bus streamCreator) func(io.Writer, request) er
 		var body createStreamRequest
 		err := parseReq(r, &body)
 		if err != nil {
-			transport.SendJSON(w, createStreamOperation, err)
+			transport.SendError(w, createStreamOperation, err)
 			return err
 		}
 
 		s, err := bus.CreateStream(body.StreamName)
 		if err != nil {
-			transport.SendJSON(w, createStreamOperation, err)
+			transport.SendError(w, createStreamOperation, err)
 			return err
 		}
 

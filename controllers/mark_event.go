@@ -1,0 +1,53 @@
+package controllers
+
+import (
+	"fmt"
+	"io"
+	"strings"
+
+	"github.com/chill-and-code/event-bus/models"
+	"github.com/chill-and-code/event-bus/transport"
+)
+
+type eventMarker interface {
+	MarkEvent(eventID string, status int) error
+}
+
+type markEventRequest struct {
+	EventID string `json:"event_id" type:"string"`
+	Status  int    `json:"status" type:"int"`
+}
+
+func (router Router) markEvent(bus eventMarker) func(io.Writer, request) error {
+	return func(w io.Writer, r request) error {
+		var body markEventRequest
+		err := parseReq(r, &body)
+		if err != nil {
+			transport.SendError(w, markEventOperation, err)
+			return err
+		}
+		statuses := map[int]string{
+			models.EventUnprocessedStatus: "unprocessed",
+			models.EventProcessedStatus:   "processed",
+			models.EventRetryStatus:       "retry",
+		}
+		if _, ok := statuses[body.Status]; !ok {
+			fields := make([]string, 0)
+			for k, v := range statuses {
+				fields = append(fields, fmt.Sprintf("'%d - %s'", k, v))
+			}
+			e := fmt.Errorf("status must be one of: %s", strings.Join(fields, ","))
+			transport.SendError(w, markEventOperation, e)
+			return e
+		}
+
+		err = bus.MarkEvent(body.EventID, body.Status)
+		if err != nil {
+			transport.SendError(w, markEventOperation, err)
+			return err
+		}
+
+		transport.SendJSON(w, markEventOperation, nil)
+		return nil
+	}
+}

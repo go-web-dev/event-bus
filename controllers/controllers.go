@@ -125,8 +125,10 @@ func (router Router) Switch(w io.Writer, r io.Reader) (bool, error) {
 }
 
 func (router Router) auth(r request) error {
-	for _, c := range router.cfg.GetAuth() {
+	logger := logging.Logger
+	for client, c := range router.cfg.GetAuth() {
 		if c.ClientID == r.Auth.ClientID && c.ClientSecret == r.Auth.ClientSecret {
+			logger.Debug("authorized client", zap.String("client", client))
 			return nil
 		}
 	}

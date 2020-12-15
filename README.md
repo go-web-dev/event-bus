@@ -3,7 +3,7 @@
 Event Bus is a ***TCP*** server accepting multiple connections
 that allows the clients to produce/consume events.
 
-The events and streams are stored in [BadgerDB](https://dgraph.io/docs/badger/get-started/), which is embeddable
+The events and streams are stored in [***BadgerDB***](https://dgraph.io/docs/badger/get-started/), which is an embeddable
 file database which makes the entire service absolutely portable.
 
 The project uses classic MVC pattern and supports Go modules for dependency versioning as well.

@@ -3,7 +3,6 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"strings"
 	"sync"
 	"time"
@@ -237,34 +236,6 @@ func (b *Bus) ProcessEvents(streamName string, retry bool) ([]models.Event, erro
 	}
 	logger.Info("events processing finished", zap.String("stream_id", stream.ID))
 	return events, nil
-}
-
-func (b *Bus) SnapshotStream(streamName string, w io.Writer) error {
-	logger := logging.Logger
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	s, err := b.streamLookup(streamName)
-	if err != nil {
-		return err
-	}
-
-	logger.Info("initiating stream snapshot")
-	prefix := fmt.Sprintf("event:%s", s.ID)
-	stream := b.db.NewStream()
-	stream.NumGo = 16
-	stream.Prefix = []byte(prefix)
-	n, err := stream.Backup(w, 1)
-	if err != nil {
-		logger.Debug("could not snapshot stream", zap.Error(err))
-		return err
-	}
-	if n == 0 {
-		logger.Info("nothing to snapshot")
-		return nil
-	}
-	logger.Info("stream snapshot finished")
-	return nil
 }
 
 func (b *Bus) streamLookup(streamName string) (models.Stream, error) {

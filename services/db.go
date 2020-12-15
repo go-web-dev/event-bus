@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"io"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/pb"
@@ -15,7 +14,6 @@ import (
 
 type DB interface {
 	NewTransaction(update bool) *badger.Txn
-	Backup(w io.Writer, since uint64) (uint64, error)
 	NewStream() *badger.Stream
 }
 

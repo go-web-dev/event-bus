@@ -16,8 +16,6 @@ const (
 	EventRetryStatus       = 2
 )
 
-// client_id client_secret list
-
 type Event struct {
 	ID        string          `json:"id"`
 	CreatedAt time.Time       `json:"created_at"`

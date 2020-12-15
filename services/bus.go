@@ -24,8 +24,6 @@ func NewBus(d DB) *Bus {
 	return b
 }
 
-// add client id and client secret to request
-
 type Bus struct {
 	mu      sync.Mutex
 	db      db

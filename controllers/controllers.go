@@ -3,6 +3,7 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -10,6 +11,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/chill-and-code/event-bus/config"
 	"github.com/chill-and-code/event-bus/logging"
 	"github.com/chill-and-code/event-bus/models"
 	"github.com/chill-and-code/event-bus/transport"
@@ -30,9 +32,15 @@ const (
 	decodeOperation          = "decode_request"
 )
 
+type auth struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+}
+
 type request struct {
 	Operation string          `json:"operation"`
 	Body      json.RawMessage `json:"body"`
+	Auth      auth            `json:"auth"`
 }
 
 type EventBus interface {
@@ -50,10 +58,13 @@ type operator func(io.Writer, request) error
 
 type Router struct {
 	operations map[string]operator
+	cfg        *config.Manager
 }
 
-func NewRouter(b EventBus) Router {
-	router := Router{}
+func NewRouter(b EventBus, cfg *config.Manager) Router {
+	router := Router{
+		cfg: cfg,
+	}
 	router.operations = map[string]operator{
 		createStreamOperation:    router.createStream(b),
 		deleteStreamOperation:    router.deleteStream(b),
@@ -97,10 +108,29 @@ func (router Router) Switch(w io.Writer, r io.Reader) (bool, error) {
 		transport.SendError(w, decodeOperation, notFoundErr)
 		return false, notFoundErr
 	}
+
+	if req.Operation == healthOperation {
+		return false, operation(w, req)
+	}
 	if req.Operation == exitOperation {
 		return true, operation(w, req)
 	}
+
+	if err := router.auth(req); err != nil {
+		transport.SendError(w, req.Operation, models.AuthError{})
+		return false, err
+	}
+
 	return false, operation(w, req)
+}
+
+func (router Router) auth(r request) error {
+	for _, c := range router.cfg.GetAuth() {
+		if c.ClientID == r.Auth.ClientID && c.ClientSecret == r.Auth.ClientSecret {
+			return nil
+		}
+	}
+	return errors.New("unauthorized to make request")
 }
 
 func parseReq(r request, body interface{}) error {

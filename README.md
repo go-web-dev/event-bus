@@ -35,39 +35,39 @@ something like `telnet` to talk over TCP.
 ```
 {"operation": "health"}
 
-{"operation": "create_stream", "body": {"stream_name": "steve"}}
-{"operation": "create_stream", "body": {"stream_name": "john"}}
-{"operation": "create_stream", "body": {"stream_name": "mike"}}
+{"operation": "create_stream", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve"}}
+{"operation": "create_stream", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "john"}}
+{"operation": "create_stream", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "mike"}}
 
-{"operation": "delete_stream", "body": {"stream_name": "steve"}}
-{"operation": "delete_stream", "body": {"stream_name": "john"}}
+{"operation": "delete_stream", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve"}}
+{"operation": "delete_stream", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "john"}}
 
-{"operation": "get_stream_info", "body": {"stream_name": "steve"}}
-{"operation": "get_stream_info", "body": {"stream_name": "john"}}
+{"operation": "get_stream_info", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve"}}
+{"operation": "get_stream_info", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "john"}}
 
-{"operation": "get_stream_events", "body": {"stream_name": "steve"}}
-{"operation": "get_stream_events", "body": {"stream_name": "john"}}
+{"operation": "get_stream_events", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve"}}
+{"operation": "get_stream_events", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "john"}}
 
-{"operation": "snapshot_stream", "body": {"stream_name": "steve"}}
-{"operation": "snapshot_stream", "body": {"stream_name": "john"}}
+{"operation": "snapshot_stream", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve"}}
+{"operation": "snapshot_stream", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "john"}}
 
-{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e1": "event 1 value"}}}
-{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e2": "event 2 value"}}}
-{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e3": "event 3 value"}}}
-{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e4": "event 4 value"}}}
-{"operation": "write_event", "body": {"stream_name": "steve", "event": {"e5": "event 5 value"}}}
+{"operation": "write_event", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve", "event": {"e1": "event 1 value"}}}
+{"operation": "write_event", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve", "event": {"e2": "event 2 value"}}}
+{"operation": "write_event", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve", "event": {"e3": "event 3 value"}}}
+{"operation": "write_event", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve", "event": {"e4": "event 4 value"}}}
+{"operation": "write_event", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve", "event": {"e5": "event 5 value"}}}
 
-{"operation": "write_event", "body": {"stream_name": "john", "event": {"e1": "event 1 value"}}}
-{"operation": "write_event", "body": {"stream_name": "john", "event": {"e2": "event 2 value"}}}
+{"operation": "write_event", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "john", "event": {"e1": "event 1 value"}}}
+{"operation": "write_event", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "john", "event": {"e2": "event 2 value"}}}
 
-{"operation": "process_events", "body": {"stream_name": "steve"}}
-{"operation": "process_events", "body": {"stream_name": "john"}}
+{"operation": "process_events", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve"}}
+{"operation": "process_events", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "john"}}
 
-{"operation": "retry_events", "body": {"stream_name": "steve"}}
-{"operation": "retry_events", "body": {"stream_name": "john"}}
+{"operation": "retry_events", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "steve"}}
+{"operation": "retry_events", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"stream_name": "john"}}
 
-{"operation": "mark_event", "body": {"event_id": "1b78ca67-d916-4059-a299-1ebf49664eb2", "status": 1}}
-{"operation": "mark_event", "body": {"event_id": "7f85f2c4-4a5d-42fb-b24e-30ec894e053a", "status": 2}}
+{"operation": "mark_event", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"event_id": "1b78ca67-d916-4059-a299-1ebf49664eb2", "status": 1}}
+{"operation": "mark_event", "auth": {"client_id": "dope_go_client_id", "client_secret": "dope_go_client_secret"}, "body": {"event_id": "7f85f2c4-4a5d-42fb-b24e-30ec894e053a", "status": 2}}
 
 {"operation": "exit"}
 ```

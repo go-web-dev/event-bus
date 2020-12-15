@@ -20,3 +20,10 @@ type InvalidJSONError struct {
 func (e InvalidJSONError) Error() string {
 	return "invalid json provided"
 }
+
+type AuthError struct {
+}
+
+func (e AuthError) Error() string {
+	return "unauthorized to make request"
+}

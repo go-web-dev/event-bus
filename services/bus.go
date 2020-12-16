@@ -171,7 +171,7 @@ func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
 	return nil
 }
 
-func (b *Bus) MarkEvent(eventID string, status int) error {
+func (b *Bus) MarkEvent(eventID string, status uint8) error {
 	logger := logging.Logger
 	b.mu.Lock()
 	defer b.mu.Unlock()

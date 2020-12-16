@@ -10,12 +10,12 @@ import (
 )
 
 type eventMarker interface {
-	MarkEvent(eventID string, status int) error
+	MarkEvent(eventID string, status uint8) error
 }
 
 type markEventRequest struct {
 	EventID string `json:"event_id" type:"string"`
-	Status  int    `json:"status" type:"int"`
+	Status  uint8  `json:"status" type:"uint8"`
 }
 
 func (router Router) markEvent(bus eventMarker) func(io.Writer, request) error {
@@ -26,7 +26,7 @@ func (router Router) markEvent(bus eventMarker) func(io.Writer, request) error {
 			transport.SendError(w, markEventOperation, err)
 			return err
 		}
-		statuses := map[int]string{
+		statuses := map[uint8]string{
 			models.EventUnprocessedStatus: "unprocessed",
 			models.EventProcessedStatus:   "processed",
 			models.EventRetryStatus:       "retry",

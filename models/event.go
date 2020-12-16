@@ -11,20 +11,20 @@ import (
 )
 
 const (
-	EventUnprocessedStatus = 0
-	EventProcessedStatus   = 1
-	EventRetryStatus       = 2
+	EventUnprocessedStatus = uint8(0)
+	EventProcessedStatus   = uint8(1)
+	EventRetryStatus       = uint8(2)
 )
 
 type Event struct {
 	ID        string          `json:"id"`
-	CreatedAt time.Time       `json:"created_at"`
 	StreamID  string          `json:"stream_id"`
-	Status    int             `json:"status"`
+	Status    uint8           `json:"status"`
+	CreatedAt time.Time       `json:"created_at"`
 	Body      json.RawMessage `json:"body"`
 }
 
-func (e Event) Key(status int) []byte {
+func (e Event) Key(status uint8) []byte {
 	key := fmt.Sprintf(
 		"event:%s:%d:%s:%s",
 		e.StreamID,

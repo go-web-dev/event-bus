@@ -8,8 +8,8 @@ import (
 	"github.com/dgraph-io/badger/v2/pb"
 	"go.uber.org/zap"
 
-	"github.com/chill-and-code/event-bus/logging"
-	"github.com/chill-and-code/event-bus/models"
+	"github.com/go-web-dev/event-bus/logging"
+	"github.com/go-web-dev/event-bus/models"
 )
 
 // DB represents the file database that stores streams and events

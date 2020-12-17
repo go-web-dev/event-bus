@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/spf13/viper"
 
-	"github.com/chill-and-code/event-bus/logging"
+	"github.com/go-web-dev/event-bus/logging"
 )
 
 // Configuration fields

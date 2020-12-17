@@ -11,10 +11,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/chill-and-code/event-bus/config"
-	"github.com/chill-and-code/event-bus/logging"
-	"github.com/chill-and-code/event-bus/models"
-	"github.com/chill-and-code/event-bus/transport"
+	"github.com/go-web-dev/event-bus/config"
+	"github.com/go-web-dev/event-bus/logging"
+	"github.com/go-web-dev/event-bus/models"
+	"github.com/go-web-dev/event-bus/transport"
 )
 
 // Operations

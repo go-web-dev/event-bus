@@ -10,8 +10,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/chill-and-code/event-bus/logging"
-	"github.com/chill-and-code/event-bus/services"
+	"github.com/go-web-dev/event-bus/logging"
+	"github.com/go-web-dev/event-bus/services"
 )
 
 type router interface {

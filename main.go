@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/chill-and-code/event-bus/config"
-	"github.com/chill-and-code/event-bus/controllers"
-	"github.com/chill-and-code/event-bus/logging"
-	"github.com/chill-and-code/event-bus/server"
-	"github.com/chill-and-code/event-bus/services"
+	"github.com/go-web-dev/event-bus/config"
+	"github.com/go-web-dev/event-bus/controllers"
+	"github.com/go-web-dev/event-bus/logging"
+	"github.com/go-web-dev/event-bus/server"
+	"github.com/go-web-dev/event-bus/services"
 
 	"github.com/dgraph-io/badger/v2"
 )

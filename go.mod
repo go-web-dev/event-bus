@@ -1,4 +1,4 @@
-module github.com/chill-and-code/event-bus
+module github.com/go-web-dev/event-bus
 
 go 1.15
 

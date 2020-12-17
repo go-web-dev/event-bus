@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/chill-and-code/event-bus/logging"
-	"github.com/chill-and-code/event-bus/testutils"
+	"github.com/go-web-dev/event-bus/logging"
+	"github.com/go-web-dev/event-bus/testutils"
 )
 
 const (
@@ -15,14 +15,12 @@ const (
 )
 
 type configSuite struct {
-	suite.Suite
+	testutils.Suite
 	manager *Manager
 }
 
 func (s *configSuite) SetupSuite() {
-	logger, err := testutils.NewLogger()
-	s.Require().NoError(err)
-	logging.Logger = logger
+	logging.Logger = testutils.Logger(s.T(), nil)
 	m, err := NewManager(testCfgFile)
 	s.Require().NoError(err)
 	s.Require().NotNil(m)

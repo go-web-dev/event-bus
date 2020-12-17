@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/chill-and-code/event-bus/transport"
+	"github.com/go-web-dev/event-bus/transport"
 )
 
 type eventWriter interface {

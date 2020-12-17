@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/chill-and-code/event-bus/models"
+	"github.com/go-web-dev/event-bus/models"
 )
 
 // Decode decodes a certain reader into the specified type

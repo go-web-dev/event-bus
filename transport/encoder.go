@@ -3,9 +3,11 @@ package transport
 import (
 	"encoding/json"
 	"io"
-	"log"
 
-	"github.com/chill-and-code/event-bus/models"
+	"go.uber.org/zap"
+
+	"github.com/go-web-dev/event-bus/logging"
+	"github.com/go-web-dev/event-bus/models"
 )
 
 type response struct {
@@ -19,10 +21,11 @@ type response struct {
 // SendJSON is responsible for sending out JSON.
 // To be used in successful cases only
 func SendJSON(w io.Writer, op string, body interface{}) {
+	logger := logging.Logger
 	res := toResponse(body, op)
 	err := json.NewEncoder(w).Encode(res)
 	if err != nil {
-		log.Fatal("could not send response:", err)
+		logger.Error("could not encode json response", zap.Error(err))
 	}
 }
 

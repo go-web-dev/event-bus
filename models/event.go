@@ -7,7 +7,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/chill-and-code/event-bus/logging"
+	"github.com/go-web-dev/event-bus/logging"
 )
 
 // Event statuses

@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/chill-and-code/event-bus/logging"
+	"github.com/chill-and-code/event-bus/services"
 )
 
 type router interface {
@@ -21,6 +22,7 @@ type router interface {
 type Settings struct {
 	Addr   string
 	Router router
+	DB     services.DB
 }
 
 // Server represents the Event Bus TCP server
@@ -30,6 +32,7 @@ type Server struct {
 	exited      chan struct{}
 	connections map[int]net.Conn
 	router      router
+	db          services.DB
 }
 
 // ListenAndServe spins up the Event Bus TCP server
@@ -44,16 +47,23 @@ func ListenAndServe(settings Settings) *Server {
 		exited:      make(chan struct{}),
 		connections: map[int]net.Conn{},
 		router:      settings.Router,
+		db:          settings.DB,
 	}
 	go srv.serve()
 	return srv
 }
 
 // Stop is responsible for cleanup process before application server shutdown
-func (srv *Server) Stop() {
+func (srv *Server) Stop() error {
 	logger := logging.Logger
-	// stop the database here as well
-	logger.Info("stopping the event bus server")
+	close(srv.quit)
+	logger.Info("stopping the database")
+	err := srv.db.Close()
+	if err != nil {
+		return err
+	}
+	<-srv.exited
+	return nil
 }
 
 func (srv *Server) serve() {

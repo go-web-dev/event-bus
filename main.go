@@ -51,12 +51,16 @@ func main() {
 	serverSettings := server.Settings{
 		Addr:   "localhost:8080",
 		Router: router,
+		DB: db,
 	}
 
 	srv := server.ListenAndServe(serverSettings)
 
 	select {
 	case <-stop:
-		srv.Stop()
+		err := srv.Stop()
+		if err != nil {
+			log.Fatal("could not stop server: ", err)
+		}
 	}
 }

@@ -16,6 +16,7 @@ import (
 type DB interface {
 	NewTransaction(update bool) *badger.Txn
 	NewStream() *badger.Stream
+	Close() error
 }
 
 type db struct {

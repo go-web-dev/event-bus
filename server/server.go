@@ -17,11 +17,13 @@ type router interface {
 	Switch(io.Writer, io.Reader) (bool, error)
 }
 
+// Settings represents the Event Bus server settings
 type Settings struct {
 	Addr   string
 	Router router
 }
 
+// Server represents the Event Bus TCP server
 type Server struct {
 	listener    net.Listener
 	quit        chan struct{}
@@ -30,6 +32,7 @@ type Server struct {
 	router      router
 }
 
+// ListenAndServe spins up the Event Bus TCP server
 func ListenAndServe(settings Settings) *Server {
 	li, err := net.Listen("tcp", settings.Addr)
 	if err != nil {
@@ -46,8 +49,10 @@ func ListenAndServe(settings Settings) *Server {
 	return srv
 }
 
+// Stop is responsible for cleanup process before application server shutdown
 func (srv *Server) Stop() {
 	logger := logging.Logger
+	// stop the database here as well
 	logger.Info("stopping the event bus server")
 }
 

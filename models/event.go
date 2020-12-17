@@ -10,12 +10,14 @@ import (
 	"github.com/chill-and-code/event-bus/logging"
 )
 
+// Event statuses
 const (
 	EventUnprocessedStatus = uint8(0)
 	EventProcessedStatus   = uint8(1)
 	EventRetryStatus       = uint8(2)
 )
 
+// Event represents the the event structure in the Event Bus
 type Event struct {
 	ID        string          `json:"id"`
 	StreamID  string          `json:"stream_id"`
@@ -24,6 +26,7 @@ type Event struct {
 	Body      json.RawMessage `json:"body"`
 }
 
+// Key generates the event specific key for storing in database
 func (e Event) Key(status uint8) []byte {
 	key := fmt.Sprintf(
 		"event:%s:%d:%s:%s",
@@ -35,6 +38,7 @@ func (e Event) Key(status uint8) []byte {
 	return []byte(key)
 }
 
+// Value generates the event specific value for storing in database
 func (e Event) Value() []byte {
 	bs, err := json.Marshal(e)
 	if err != nil {
@@ -44,6 +48,7 @@ func (e Event) Value() []byte {
 	return bs
 }
 
+// ExpiresAt represents the TTL for an event to be stored inside the database
 func (e Event) ExpiresAt() uint64 {
 	return uint64(e.CreatedAt.Add(time.Hour * 720).UnixNano())
 }

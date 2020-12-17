@@ -12,6 +12,7 @@ import (
 	"github.com/chill-and-code/event-bus/models"
 )
 
+// DB represents the file database that stores streams and events
 type DB interface {
 	NewTransaction(update bool) *badger.Txn
 	NewStream() *badger.Stream

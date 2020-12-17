@@ -16,6 +16,8 @@ type response struct {
 	Reason    string      `json:"reason,omitempty"`
 }
 
+// SendJSON is responsible for sending out JSON.
+// To be used in successful cases only
 func SendJSON(w io.Writer, op string, body interface{}) {
 	res := toResponse(body, op)
 	err := json.NewEncoder(w).Encode(res)
@@ -24,6 +26,8 @@ func SendJSON(w io.Writer, op string, body interface{}) {
 	}
 }
 
+// SendError is responsible for sending out JSON.
+// To be used in failure/negative cases only
 func SendError(w io.Writer, op string, err error) {
 	SendJSON(w, op, err)
 }

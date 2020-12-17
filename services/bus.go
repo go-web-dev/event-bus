@@ -15,6 +15,7 @@ import (
 	"github.com/chill-and-code/event-bus/models"
 )
 
+// NewBus creates a new Event Bus service
 func NewBus(d DB) *Bus {
 	b := &Bus{
 		db:      db{d},
@@ -23,12 +24,14 @@ func NewBus(d DB) *Bus {
 	return b
 }
 
+// Bus represents the Event Bus service
 type Bus struct {
 	mu      sync.Mutex
 	db      db
 	streams map[string]models.Stream
 }
 
+// Init initializes the event bus with helper data such as streams
 func (b *Bus) Init() error {
 	logger := logging.Logger
 	b.mu.Lock()
@@ -50,6 +53,7 @@ func (b *Bus) Init() error {
 	return nil
 }
 
+// CreateStream creates a new stream for messaging in the Event Bus
 func (b *Bus) CreateStream(streamName string) (models.Stream, error) {
 	logger := logging.Logger
 	b.mu.Lock()
@@ -74,6 +78,7 @@ func (b *Bus) CreateStream(streamName string) (models.Stream, error) {
 	return stream, nil
 }
 
+// DeleteStream deletes a stream and its associated messages
 func (b *Bus) DeleteStream(streamName string) error {
 	logger := logging.Logger
 	b.mu.Lock()
@@ -108,6 +113,7 @@ func (b *Bus) DeleteStream(streamName string) error {
 	return nil
 }
 
+// GetStreamInfo gets a stream's short information
 func (b *Bus) GetStreamInfo(streamName string) (models.Stream, error) {
 	logger := logging.Logger
 	b.mu.Lock()
@@ -122,6 +128,7 @@ func (b *Bus) GetStreamInfo(streamName string) (models.Stream, error) {
 	return stream, nil
 }
 
+// GetStreamEvents gets all events for a certain stream
 func (b *Bus) GetStreamEvents(streamName string) ([]models.Event, error) {
 	logger := logging.Logger
 	b.mu.Lock()
@@ -143,6 +150,7 @@ func (b *Bus) GetStreamEvents(streamName string) ([]models.Event, error) {
 	return events, nil
 }
 
+// WriteEvent writes an event to a certain stream in the Event Bus
 func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
 	logger := logging.Logger
 	b.mu.Lock()
@@ -171,6 +179,7 @@ func (b *Bus) WriteEvent(streamName string, body json.RawMessage) error {
 	return nil
 }
 
+// MarkEvent marks an event / changes it's status
 func (b *Bus) MarkEvent(eventID string, status uint8) error {
 	logger := logging.Logger
 	b.mu.Lock()
@@ -213,6 +222,7 @@ func (b *Bus) MarkEvent(eventID string, status uint8) error {
 	return nil
 }
 
+// ProcessEvents processes/retries all available events in the queue
 func (b *Bus) ProcessEvents(streamName string, retry bool) ([]models.Event, error) {
 	logger := logging.Logger
 	b.mu.Lock()

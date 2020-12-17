@@ -9,6 +9,7 @@ import (
 	"github.com/chill-and-code/event-bus/models"
 )
 
+// Decode decodes a certain reader into the specified type
 func Decode(r io.Reader, v interface{}) error {
 	err := json.NewDecoder(r).Decode(v)
 	if err != nil {
@@ -17,6 +18,7 @@ func Decode(r io.Reader, v interface{}) error {
 	return nil
 }
 
+// DecodeFields interprets a given type via reflection to output required fields and field types
 func DecodeFields(v interface{}) []models.RequiredField {
 	fields := make([]models.RequiredField, 0)
 	t := reflect.TypeOf(v)

@@ -17,6 +17,7 @@ import (
 	"github.com/chill-and-code/event-bus/transport"
 )
 
+// Operations
 const (
 	healthOperation          = "health"
 	createStreamOperation    = "create_stream"
@@ -42,6 +43,7 @@ type request struct {
 	Auth      auth            `json:"auth"`
 }
 
+// EventBus represents the Event Bus operations
 type EventBus interface {
 	streamCreator
 	streamDeleter
@@ -54,11 +56,13 @@ type EventBus interface {
 
 type operator func(io.Writer, request) error
 
+// Router represents the Event Bus operation router switch
 type Router struct {
 	operations map[string]operator
 	cfg        *config.Manager
 }
 
+// NewRouter creates a new instance of Router switch operation
 func NewRouter(b EventBus, cfg *config.Manager) Router {
 	router := Router{
 		cfg: cfg,
@@ -84,6 +88,7 @@ func NewRouter(b EventBus, cfg *config.Manager) Router {
 	return router
 }
 
+// Switch represents the switch between Event Bus operations
 func (router Router) Switch(w io.Writer, r io.Reader) (bool, error) {
 	var req request
 	err := transport.Decode(r, &req)

@@ -6,6 +6,7 @@ import (
 
 var Logger *zap.Logger
 
+// Init initializes application logger
 func Init() error {
 	loggerCfg := zap.NewProductionConfig()
 	loggerCfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)

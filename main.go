@@ -51,7 +51,7 @@ func main() {
 	serverSettings := server.Settings{
 		Addr:   "localhost:8080",
 		Router: router,
-		DB: db,
+		DB:     db,
 	}
 
 	srv := server.ListenAndServe(serverSettings)

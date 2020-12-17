@@ -4,6 +4,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Logger represents the application logger
 var Logger *zap.Logger
 
 // Init initializes application logger

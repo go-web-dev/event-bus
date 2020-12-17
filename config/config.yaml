@@ -1,3 +1,9 @@
+logger:
+  level: debug
+  output:
+    - stdout
+    - app.log
+
 auth:
   go-client:
     client_id: "dope_go_client_id"

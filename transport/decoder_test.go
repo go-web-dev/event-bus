@@ -14,7 +14,7 @@ type person struct {
 	Age  int    `json:"age,omitempty" type:"int"`
 }
 
-func TestDecode_Success(t *testing.T) {
+func Test_Decode_Success(t *testing.T) {
 	expected := person{
 		Name: "steve",
 	}
@@ -26,7 +26,7 @@ func TestDecode_Success(t *testing.T) {
 	assert.Equal(t, expected, p)
 }
 
-func TestDecode_Error(t *testing.T) {
+func Test_Decode_Error(t *testing.T) {
 	var p person
 
 	err := Decode(bytes.NewReader([]byte(`}`)), &p)
@@ -35,7 +35,7 @@ func TestDecode_Error(t *testing.T) {
 	assert.Empty(t, p)
 }
 
-func TestDecodeFields(t *testing.T) {
+func Test_DecodeFields(t *testing.T) {
 	expected := []models.RequiredField{
 		{
 			Name:     "name",

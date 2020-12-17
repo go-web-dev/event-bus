@@ -1,3 +1,9 @@
+logger:
+  level: debug
+  output:
+    - stdout
+    - app.log
+
 auth:
   client1:
     client_id: "client1_id"

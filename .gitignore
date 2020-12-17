@@ -3,3 +3,4 @@
 badger/
 backups/
 event-bus
+app.log

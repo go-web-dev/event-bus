@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/go-web-dev/event-bus/logging"
@@ -41,7 +42,7 @@ func (s *configSuite) Test_NewManager_ReadConfigError() {
 	s.Nil(m)
 }
 
-func (s *configSuite) Test_NewManager_LoadAuthError() {
+func (s *configSuite) Test_NewManager_LoadAuth_UnmarshalError() {
 	tmpFileName := "tmp_cfg.yaml"
 	file, err := os.Create(tmpFileName)
 	s.Require().NoError(err)
@@ -53,6 +54,51 @@ func (s *configSuite) Test_NewManager_LoadAuthError() {
 	s.EqualError(err, "1 error(s) decoding:\n\n* '[client_id]' expected a map, got 'int'")
 	s.Nil(m)
 	s.Require().NoError(os.Remove(tmpFileName))
+}
+
+func (s *configSuite) Test_NewManager_LoadAuth_EmptyError() {
+	tmpFileName := "tmp_cfg.yaml"
+	file, err := os.Create(tmpFileName)
+	s.Require().NoError(err)
+	_, err = file.Write([]byte("auth:\n"))
+	s.Require().NoError(err)
+
+	m, err := NewManager(tmpFileName)
+
+	s.EqualError(err, "'auth' field is required")
+	s.Nil(m)
+	s.Require().NoError(os.Remove(tmpFileName))
+}
+
+func (s *configSuite) Test_Manager_setDefaults() {
+	m := &Manager{viper: viper.New()}
+	m.setDefaults()
+	testCases := []struct {
+		name     string
+		actual   interface{}
+		expected interface{}
+	}{
+		{name: "GetLoggerLevel", actual: m.GetLoggerLevel(), expected: "debug"},
+		{name: "GetLoggerOutput", actual: m.GetLoggerOutput(), expected: []string{"stdout"}},
+	}
+
+	for _, testCase := range testCases {
+		s.Run(testCase.name, func() {
+			s.Equal(testCase.expected, testCase.actual)
+		})
+	}
+}
+
+func (s *configSuite) Test_GetLoggerLevel() {
+	level := s.manager.GetLoggerLevel()
+
+	s.Equal("debug", level)
+}
+
+func (s *configSuite) Test_GetLoggerOutput() {
+	out := s.manager.GetLoggerOutput()
+
+	s.Equal([]string{"stdout", "app.log"}, out)
 }
 
 func (s *configSuite) Test_GetAuth() {

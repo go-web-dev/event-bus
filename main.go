@@ -23,14 +23,18 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	err := logging.Init()
-	if err != nil {
-		log.Fatal("could not initialize logger: ", err)
-	}
-
 	cfg, err := config.NewManager(*configPath)
 	if err != nil {
 		log.Fatal("could not create config manager: ", err)
+	}
+
+	loggerSettings := logging.Settings{
+		Level:  cfg.GetLoggerLevel(),
+		Output: cfg.GetLoggerOutput(),
+	}
+	err = logging.Init(loggerSettings)
+	if err != nil {
+		log.Fatal("could not initialize logger: ", err)
 	}
 
 	dbOptions := badger.DefaultOptions("badger")

@@ -46,7 +46,7 @@ func (rw *ReadWriter) Write(bs []byte) (int, error) {
 // Logger creates a new test logger
 func Logger(t *testing.T, err *error) *zap.Logger {
 	logger := zaptest.NewLogger(t, zaptest.WrapOptions(zap.Hooks(func(e zapcore.Entry) error {
-		if e.Level == zap.ErrorLevel {
+		if err != nil && e.Level == zap.ErrorLevel {
 			*err = errors.New(e.Message)
 		}
 		return nil

@@ -1,0 +1,7 @@
+auth:
+  client1:
+    client_id: "client1_id"
+    client_secret: "client1_secret"
+  client2:
+    client_id: "client2_id"
+    client_secret: "client2_secret"

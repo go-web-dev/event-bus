@@ -42,7 +42,7 @@ func (e Event) Key(status uint8) []byte {
 func (e Event) Value() []byte {
 	bs, err := json.Marshal(e)
 	if err != nil {
-		logging.Logger.Debug("could not marshal event", zap.Error(err))
+		logging.Logger.Error("could not marshal event", zap.Error(err))
 		return []byte{}
 	}
 	return bs

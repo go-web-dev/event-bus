@@ -26,7 +26,7 @@ func (s Stream) Key() []byte {
 func (s Stream) Value() []byte {
 	bs, err := json.Marshal(s)
 	if err != nil {
-		logging.Logger.Debug("could not marshal stream", zap.Error(err))
+		logging.Logger.Error("could not marshal stream", zap.Error(err))
 		return []byte{}
 	}
 	return bs

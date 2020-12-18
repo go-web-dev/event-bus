@@ -16,6 +16,7 @@ import (
 type DB interface {
 	NewTransaction(update bool) *badger.Txn
 	NewStream() *badger.Stream
+	DropAll() error
 	Close() error
 }
 
@@ -107,7 +108,7 @@ func (d db) streamEvents(key string, chooseKeyFunc func(item *badger.Item) bool)
 			var evt models.Event
 			err := json.Unmarshal(v.Value, &evt)
 			if err != nil {
-				logger.Debug("could not unmarshal message", zap.Error(err))
+				logger.Error("could not unmarshal message", zap.Error(err))
 				continue
 			}
 			events = append(events, evt)

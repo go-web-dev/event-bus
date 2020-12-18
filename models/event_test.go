@@ -47,5 +47,5 @@ func Test_Event_Value(t *testing.T) {
 func Test_Event_ExpiresAt(t *testing.T) {
 	expiresAt := testEvt.ExpiresAt()
 
-	assert.Equal(t, uint64(testTime.Add(720 * time.Hour).UnixNano()), expiresAt)
+	assert.Equal(t, uint64(testTime.Add(720*time.Hour).UnixNano()), expiresAt)
 }

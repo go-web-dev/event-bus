@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/go-web-dev/event-bus/logging"
 	"github.com/go-web-dev/event-bus/models"
@@ -13,11 +14,11 @@ import (
 
 type encoderSuite struct {
 	testutils.Suite
-	logErr error
+	logEntry zapcore.Entry
 }
 
 func (s *encoderSuite) SetupSuite() {
-	logging.Logger = testutils.Logger(s.T(), &s.logErr)
+	logging.Logger = testutils.Logger(s.T(), &s.logEntry)
 }
 
 func (s *encoderSuite) TestSendJSON_Success() {
@@ -45,7 +46,7 @@ func (s *encoderSuite) TestSendJSON_Error() {
 
 	SendJSON(rw, "great_op", make(chan int))
 
-	s.EqualError(s.logErr, "could not encode json response")
+	s.Equal(s.logEntry.Message, "could not encode json response")
 	s.Empty(s.ReadAll(s.T(), rw))
 }
 
@@ -93,6 +94,6 @@ func (s *encoderSuite) TestSendError_WithContext() {
 	s.Empty(s.ReadAll(s.T(), rw))
 }
 
-func TestEncoder(t *testing.T) {
+func Test_EncoderSuite(t *testing.T) {
 	suite.Run(t, new(encoderSuite))
 }

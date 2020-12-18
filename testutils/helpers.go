@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
 	"testing"
@@ -14,20 +13,24 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
+// Suite represents a testify suite with extra methods available
 type Suite struct {
 	suite.Suite
 }
 
+// ReadAll is an extra functionality in the testify suite for reading all from a reader
 func (s *Suite) ReadAll(t *testing.T, r io.Reader) string {
 	bs, err := ioutil.ReadAll(r)
 	require.NoError(t, err)
 	return string(bs)
 }
 
+// NewReadWriter creates a new instance of testing ReadWriter
 func NewReadWriter() *ReadWriter {
 	return &ReadWriter{}
 }
 
+// ReadWriter represents a read writer for testing purposes
 type ReadWriter struct {
 	buff bytes.Buffer
 }
@@ -41,10 +44,10 @@ func (rw *ReadWriter) Write(bs []byte) (int, error) {
 }
 
 // Logger creates a new test logger
-func Logger(t *testing.T, err *error) *zap.Logger {
+func Logger(t *testing.T, entry *zapcore.Entry) *zap.Logger {
 	logger := zaptest.NewLogger(t, zaptest.WrapOptions(zap.Hooks(func(e zapcore.Entry) error {
-		if err != nil && e.Level == zap.ErrorLevel {
-			*err = errors.New(e.Message)
+		if entry != nil && e.Level == zap.ErrorLevel {
+			*entry = e
 		}
 		return nil
 	})))

@@ -118,6 +118,6 @@ func (s *configSuite) Test_GetAuth() {
 	s.Equal(expected, clientAuth)
 }
 
-func TestConfig(t *testing.T) {
+func Test_ConfigSuite(t *testing.T) {
 	suite.Run(t, new(configSuite))
 }

@@ -8,8 +8,9 @@ import (
 // Logger represents the application logger
 var Logger *zap.Logger
 
+// Settings represents the application logger settings
 type Settings struct {
-	Level string
+	Level  string
 	Output []string
 }
 

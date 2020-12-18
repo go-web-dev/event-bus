@@ -6,6 +6,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.1.2
+	github.com/magiconair/properties v1.8.0
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/multierr v1.6.0 // indirect

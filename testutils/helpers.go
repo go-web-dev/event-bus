@@ -19,9 +19,6 @@ type Suite struct {
 }
 
 func (s *Suite) ReadAll(t *testing.T, r io.Reader) string {
-	if rc, ok := r.(io.Closer); ok {
-		defer func() { require.NoError(t, rc.Close()) }()
-	}
 	bs, err := ioutil.ReadAll(r)
 	require.NoError(t, err)
 	return string(bs)

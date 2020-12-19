@@ -58,6 +58,43 @@ func (s *controllersSuite) Test_CreateStream_ParseReqError() {
 	s.Equal(expectedRes, s.read())
 }
 
+func (s *controllersSuite) Test_CreateStream_NilReqError() {
+	expectedRes := transport.Response{
+		Operation: "create_stream",
+		Status: false,
+		Reason: "missing required fields",
+		Context: JSON{
+			"body": []interface{}{
+				JSON{
+					"name": "stream_name",
+					"type": "string",
+					"required": true,
+				},
+			},
+		},
+	}
+	expectedErr := models.OperationRequestError{
+		Body: []models.RequiredField{
+			{
+				Name: "stream_name",
+				Type: "string",
+				Required: true,
+			},
+		},
+	}
+	s.write("create_stream", "")
+	s.cfg.
+		On("GetAuth").
+		Return(s.auth).
+		Once()
+
+	exited, err := s.router.Switch(s.rw, s.rw)
+
+	s.Equal(expectedErr, err)
+	s.False(exited)
+	s.Equal(expectedRes, s.read())
+}
+
 func (s *controllersSuite) Test_CreateStream_ServiceError() {
 	expectedRes := transport.Response{
 		Operation: "create_stream",

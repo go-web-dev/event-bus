@@ -10,7 +10,7 @@ import (
 	"github.com/go-web-dev/event-bus/models"
 )
 
-type response struct {
+type Response struct {
 	Operation string      `json:"operation"`
 	Status    bool        `json:"status"`
 	Body      interface{} `json:"body,omitempty"`
@@ -35,8 +35,8 @@ func SendError(w io.Writer, op string, err error) {
 	SendJSON(w, op, err)
 }
 
-func toResponse(any interface{}, op string) response {
-	res := response{
+func toResponse(any interface{}, op string) Response {
+	res := Response{
 		Operation: op,
 	}
 	switch value := any.(type) {

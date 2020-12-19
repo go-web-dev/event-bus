@@ -1,8 +1,12 @@
 package controllers
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -10,7 +14,19 @@ import (
 	"github.com/go-web-dev/event-bus/logging"
 	"github.com/go-web-dev/event-bus/models"
 	"github.com/go-web-dev/event-bus/testutils"
+	"github.com/go-web-dev/event-bus/transport"
 )
+
+const (
+	testTimeStr = "2020-12-15T05:28:31.490416Z"
+)
+
+var (
+	testTime, _ = time.Parse(time.RFC3339, testTimeStr)
+	errTest     = errors.New("some test error")
+)
+
+type JSON = map[string]interface{}
 
 type controllersSuite struct {
 	testutils.Suite
@@ -52,39 +68,32 @@ func (s *controllersSuite) Test_NewRouter() {
 	s.Len(router.operations, 10)
 }
 
-func (s *controllersSuite) Test_Switch_Success() {
-	s.write("create_stream", `{"stream_name": "some-stream-name"}`)
-	s.cfg.
-		On("GetAuth").
-		Return(s.auth).
-		Once()
-	s.bus.
-		On("CreateStream", "some-stream-name").
-		Return(models.Stream{}, nil).
-		Once()
-
-	exited, err := s.router.Switch(s.rw, s.rw)
-
-	s.Require().NoError(err)
-	s.False(exited)
-}
-
 func (s *controllersSuite) Test_Switch_Health() {
+	expectedRes := transport.Response{
+		Operation: "health",
+		Status: true,
+	}
 	s.write("health", "")
 
 	exited, err := s.router.Switch(s.rw, s.rw)
 
 	s.Require().NoError(err)
 	s.False(exited)
+	s.Equal(expectedRes, s.read())
 }
 
 func (s *controllersSuite) Test_Switch_Exit() {
+	expectedRes := transport.Response{
+		Operation: "exit",
+		Status: true,
+	}
 	s.write("exit", "")
 
 	exited, err := s.router.Switch(s.rw, s.rw)
 
 	s.Require().NoError(err)
 	s.True(exited)
+	s.Equal(expectedRes, s.read())
 }
 
 func (s *controllersSuite) Test_Switch_WrongCommandError() {
@@ -97,6 +106,11 @@ func (s *controllersSuite) Test_Switch_WrongCommandError() {
 }
 
 func (s *controllersSuite) Test_Switch_AuthError() {
+	expectedRes := transport.Response{
+		Operation: "create_stream",
+		Status: false,
+		Reason: "unauthorized to make request",
+	}
 	s.write("create_stream", "")
 	s.cfg.
 		On("GetAuth").
@@ -107,9 +121,15 @@ func (s *controllersSuite) Test_Switch_AuthError() {
 
 	s.Equal(models.AuthError{}, err)
 	s.False(exited)
+	s.Equal(expectedRes, s.read())
 }
 
 func (s *controllersSuite) Test_Switch_DecodeError() {
+	expectedRes := transport.Response{
+		Operation: "decode_request",
+		Status: false,
+		Reason: "invalid json provided",
+	}
 	expectedErr := models.Error{
 		Message: "invalid character ',' looking for beginning of object key string",
 	}
@@ -119,6 +139,7 @@ func (s *controllersSuite) Test_Switch_DecodeError() {
 
 	s.Equal(expectedErr, err)
 	s.False(exited)
+	s.Equal(expectedRes, s.read())
 }
 
 func (s *controllersSuite) write(operation, body string) {
@@ -134,6 +155,14 @@ func (s *controllersSuite) write(operation, body string) {
 
 	_, err := s.rw.Write([]byte(req))
 	s.Require().NoError(err)
+}
+
+func (s *controllersSuite) read() transport.Response {
+	var res transport.Response
+	bs, err := ioutil.ReadAll(s.rw)
+	s.Require().NoError(err)
+	s.Require().NoError(json.Unmarshal(bs, &res))
+	return res
 }
 
 func Test_ControllersSuite(t *testing.T) {

@@ -2,7 +2,6 @@ package services
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -73,12 +72,9 @@ func (s *busSuite) Test_Bus_Init_Success() {
 		stream1.Name: stream1,
 		stream2.Name: stream2,
 	}
-	txn1 := s.db.set(stream1.Key(), stream1.Value(), 0)
-	txn2 := s.db.set(stream2.Key(), stream2.Value(), 0)
-	err := s.db.txn(true, txn1, txn2)
-	s.Require().NoError(err)
+	s.setStreams(stream1, stream2)
 
-	err = s.bus.Init()
+	err := s.bus.Init()
 
 	s.Require().NoError(err)
 	s.Equal(expected, s.bus.streams)
@@ -93,12 +89,10 @@ func (s *busSuite) Test_Bus_Init_Error() {
 	expected := map[string]models.Stream{
 		stream.Name: stream,
 	}
-	txn1 := s.db.set(stream.Key(), stream.Value(), 0)
-	txn2 := s.db.set([]byte("stream:zzz-stream-id"), []byte(`{`), 0)
-	err := s.db.txn(true, txn1, txn2)
-	s.Require().NoError(err)
+	s.setStreams(stream)
+	s.setRaw([]byte("stream:zzz-stream-id"), []byte(`{`))
 
-	err = s.bus.Init()
+	err := s.bus.Init()
 
 	s.EqualError(err, "unexpected end of JSON input")
 	s.Equal(expected, s.bus.streams)
@@ -139,24 +133,15 @@ func (s *busSuite) Test_Bus_DeleteStream_Success() {
 		ID:       "evt2-id",
 		StreamID: streamID,
 	}
-	txn1 := s.db.set(stream.Key(), stream.Value(), 0)
-	txn2 := s.db.set(evt1.Key(0), evt1.Value(), 0)
-	txn3 := s.db.set(evt2.Key(0), evt2.Value(), 0)
-	s.Require().NoError(s.db.txn(true, txn1, txn2, txn3))
+	s.setStreams(stream)
+	s.setEvents(evt1, evt2)
 	s.bus.streams[streamName] = stream
 
 	err := s.bus.DeleteStream(streamName)
 
 	s.Require().NoError(err)
 	s.Empty(s.bus.streams)
-	fn := func(result fetchResult) {
-		s.Fail(fmt.Sprintf("did not expect to see result: '%s'", result.key))
-	}
-	var streamVar models.Stream
-	fetchStreamTxn := s.db.fetch("stream:", &streamVar, fn)
-	var evtVar models.Event
-	fetchEvtTxn := s.db.fetch("event:", &evtVar, fn)
-	s.Require().NoError(s.db.txn(false, fetchStreamTxn, fetchEvtTxn))
+	s.Empty(s.fetchEvents())
 }
 
 func (s *busSuite) Test_Bus_DeleteStream_StreamNotFoundError() {
@@ -172,8 +157,7 @@ func (s *busSuite) Test_Bus_GetStreamInfo_Success() {
 		Name:      streamName,
 		CreatedAt: testTime,
 	}
-	txn := s.db.set(expected.Key(), expected.Value(), 0)
-	s.Require().NoError(s.db.txn(true, txn))
+	s.setStreams(expected)
 	s.bus.streams[streamName] = expected
 
 	stream, err := s.bus.GetStreamInfo(streamName)
@@ -192,36 +176,45 @@ func (s *busSuite) Test_Bus_GetStreamInfo_StreamNotFoundError() {
 func (s *busSuite) Test_Bus_GetStreamEvents_Success() {
 	streamName := "stream-name"
 	streamID := "stream-id"
-	stream := models.Stream{
+	anotherStreamID := "another-stream-id"
+	stream1 := models.Stream{
 		ID:        streamID,
 		Name:      streamName,
 		CreatedAt: testTime,
 	}
-	evt1 := models.Event{
-		ID:       "evt1-id",
+	stream2 := models.Stream{
+		ID:        anotherStreamID,
+		Name:      "another-stream",
+		CreatedAt: testTime,
+	}
+	s1Evt1 := models.Event{
+		ID:       "s1-evt1-id",
 		StreamID: streamID,
 		Body:     []byte("{}"),
 		Status:   0,
 	}
-	evt2 := models.Event{
-		ID:       "evt2-id",
+	s1Evt2 := models.Event{
+		ID:       "s1-evt2-id",
 		StreamID: streamID,
 		Body:     []byte("{}"),
 		Status:   1,
 	}
-	evt3 := models.Event{
-		ID:       "evt3-id",
+	s1Evt3 := models.Event{
+		ID:       "s1-evt3-id",
 		StreamID: streamID,
 		Body:     []byte("{}"),
 		Status:   2,
 	}
-	expectedEvents := []models.Event{evt1, evt2, evt3}
-	txn1 := s.db.set(stream.Key(), stream.Value(), 0)
-	txn2 := s.db.set(evt1.Key(0), evt1.Value(), 0)
-	txn3 := s.db.set(evt2.Key(1), evt2.Value(), 0)
-	txn4 := s.db.set(evt3.Key(2), evt3.Value(), 0)
-	s.Require().NoError(s.db.txn(true, txn1, txn2, txn3, txn4))
-	s.bus.streams[streamName] = stream
+	s2Evt1 := models.Event{
+		ID:       "s2-evt1-id",
+		StreamID: anotherStreamID,
+		Body:     []byte("{}"),
+		Status:   0,
+	}
+	expectedEvents := []models.Event{s1Evt1, s1Evt2, s1Evt3}
+	s.setStreams(stream1, stream2)
+	s.setEvents(s1Evt1, s1Evt2, s1Evt3, s2Evt1)
+	s.bus.streams[streamName] = stream1
 
 	events, err := s.bus.GetStreamEvents(streamName)
 
@@ -253,8 +246,7 @@ func (s *busSuite) Test_Bus_GetStreamEvents_UnmarshalJSONError() {
 		ID:       "evt1-id",
 		StreamID: streamID,
 	}
-	txn := s.db.set(evt.Key(0), []byte("}"), 0)
-	s.Require().NoError(s.db.txn(true, txn))
+	s.setRaw(evt.Key(0), []byte("}"))
 	s.bus.streams[streamName] = models.Stream{ID: streamID}
 
 	stream, err := s.bus.GetStreamEvents(streamName)
@@ -262,15 +254,6 @@ func (s *busSuite) Test_Bus_GetStreamEvents_UnmarshalJSONError() {
 	s.Nil(err)
 	s.Empty(stream)
 	s.Equal("could not unmarshal message", s.loggerEntry.Message)
-}
-
-func (s busSuite) newBadger() *badger.DB {
-	dbOptions := badger.DefaultOptions("")
-	dbOptions.Logger = nil
-	dbOptions = dbOptions.WithInMemory(true)
-	badgerDB, err := badger.Open(dbOptions)
-	s.Require().NoError(err)
-	return badgerDB
 }
 
 func (s *busSuite) Test_Bus_WriteEvent_Success() {
@@ -282,24 +265,17 @@ func (s *busSuite) Test_Bus_WriteEvent_Success() {
 	err := s.bus.WriteEvent(streamName, json.RawMessage(evtBody))
 
 	s.Require().NoError(err)
-	var evtVar models.Event
-	txn := s.db.fetch("event:", &evtVar, func(result fetchResult) {
-		evt := result.item.(*models.Event)
-		s.Equal(streamID, evt.StreamID)
-		s.JSONEq(evtBody, string(evt.Body))
-	})
-	s.Require().NoError(s.db.txn(false, txn))
+	events := s.fetchEvents()
+	s.Require().Len(events, 1)
+	s.Equal(streamID, events[0].StreamID)
+	s.JSONEq(evtBody, string(events[0].Body))
 }
 
 func (s *busSuite) Test_Bus_WriteEvent_StreamNotFoundError() {
 	err := s.bus.WriteEvent("stream-name", []byte(`{"k", "v"}`))
 
 	s.EqualError(err, "stream 'stream-name' not found")
-	var evtVar models.Event
-	txn := s.db.fetch("event:", &evtVar, func(result fetchResult) {
-		s.Fail(fmt.Sprintf("did not expect to see result: '%s'", result.key))
-	})
-	s.Require().NoError(s.db.txn(false, txn))
+	s.Empty(s.fetchEvents())
 }
 
 func (s *busSuite) Test_Bus_MarkEvent_Success() {
@@ -311,20 +287,16 @@ func (s *busSuite) Test_Bus_MarkEvent_Success() {
 		StreamID: streamID,
 		Body:     []byte("{}"),
 	}
-	txn := s.db.set(evt.Key(0), evt.Value(), 0)
-	s.Require().NoError(s.db.txn(true, txn))
+	s.setEvents(evt)
 	s.bus.streams[streamName] = models.Stream{ID: streamID}
 
 	err := s.bus.MarkEvent(evtID, 1)
 
 	s.Require().NoError(err)
-	var evtVar models.Event
-	txn = s.db.fetch("event:", &evtVar, func(result fetchResult) {
-		evt := result.item.(*models.Event)
-		s.Equal(streamID, evt.StreamID)
-		s.Equal(uint8(1), evt.Status)
-	})
-	s.Require().NoError(s.db.txn(false, txn))
+	events := s.fetchEvents()
+	s.Require().Len(events, 1)
+	s.Equal(streamID, events[0].StreamID)
+	s.Equal(uint8(1), events[0].Status)
 }
 
 func (s *busSuite) Test_Bus_MarkEvent_EventNotFound() {
@@ -336,45 +308,55 @@ func (s *busSuite) Test_Bus_MarkEvent_EventNotFound() {
 func (s *busSuite) Test_Bus_ProcessEvents_Success() {
 	streamName := "stream-name"
 	streamID := "stream-id"
-	stream := models.Stream{
+	anotherStreamID := "another-stream-id"
+	stream1 := models.Stream{
 		ID:        streamID,
 		Name:      streamName,
 		CreatedAt: testTime,
 	}
-	evt1 := models.Event{
-		ID:       "evt1-id",
+	stream2 := models.Stream{
+		ID:        anotherStreamID,
+		Name:      "another-stream-name",
+		CreatedAt: testTime,
+	}
+	s1Evt1 := models.Event{
+		ID:       "s1-evt1-id",
 		StreamID: streamID,
 		Body:     []byte("{}"),
 		Status:   0,
 	}
-	evt2 := models.Event{
-		ID:       "evt2-id",
+	s1Evt2 := models.Event{
+		ID:       "s1-evt2-id",
 		StreamID: streamID,
 		Body:     []byte("{}"),
 		Status:   1,
 	}
-	evt3 := models.Event{
-		ID:       "evt3-id",
+	s1Evt3 := models.Event{
+		ID:       "s1-evt3-id",
 		StreamID: streamID,
 		Body:     []byte("{}"),
 		Status:   2,
 	}
-	txn1 := s.db.set(stream.Key(), stream.Value(), 0)
-	txn2 := s.db.set(evt1.Key(0), evt1.Value(), 0)
-	txn3 := s.db.set(evt2.Key(1), evt2.Value(), 0)
-	txn4 := s.db.set(evt3.Key(2), evt3.Value(), 0)
-	s.Require().NoError(s.db.txn(true, txn1, txn2, txn3, txn4))
-	s.bus.streams[streamName] = stream
+	s2Evt1 := models.Event{
+		ID:       "s2-evt1-id",
+		StreamID: anotherStreamID,
+		Body:     []byte("{}"),
+		Status:   0,
+	}
+	s.setStreams(stream1, stream2)
+	s.setEvents(s1Evt1, s1Evt2, s1Evt3, s2Evt1)
+	s.bus.streams[stream1.Name] = stream1
+	s.bus.streams[stream2.Name] = stream2
 
 	events, err := s.bus.ProcessEvents(streamName, false)
 
 	s.Require().NoError(err)
-	s.Equal([]models.Event{evt1}, events)
+	s.Equal([]models.Event{s1Evt1}, events)
 
 	events, err = s.bus.ProcessEvents(streamName, true)
 
 	s.Require().NoError(err)
-	s.Equal([]models.Event{evt3}, events)
+	s.Equal([]models.Event{s1Evt3}, events)
 }
 
 func (s *busSuite) Test_Bus_ProcessEvents_EmptyResult() {
@@ -386,8 +368,7 @@ func (s *busSuite) Test_Bus_ProcessEvents_EmptyResult() {
 		Body:     []byte("{}"),
 		Status:   2,
 	}
-	txn := s.db.set(evt.Key(2), evt.Value(), 0)
-	s.Require().NoError(s.db.txn(true, txn))
+	s.setEvents(evt)
 	s.bus.streams[streamName] = models.Stream{ID: streamID}
 
 	events, err := s.bus.ProcessEvents(streamName, false)
@@ -401,6 +382,42 @@ func (s *busSuite) Test_Bus_ProcessEvents_StreamNotFound() {
 
 	s.EqualError(err, "stream 'non-existent-stream' not found")
 	s.Empty(events)
+}
+
+func (s busSuite) newBadger() *badger.DB {
+	dbOptions := badger.DefaultOptions("")
+	dbOptions.Logger = nil
+	dbOptions = dbOptions.WithInMemory(true)
+	badgerDB, err := badger.Open(dbOptions)
+	s.Require().NoError(err)
+	return badgerDB
+}
+
+func (s *busSuite) setRaw(key, value []byte) {
+	s.Require().NoError(s.db.txn(true, s.db.set(key, value, 0)))
+}
+
+func (s *busSuite) setStreams(streams ...models.Stream) {
+	for _, stream := range streams {
+		s.setRaw(stream.Key(), stream.Value())
+	}
+}
+
+func (s *busSuite) setEvents(events ...models.Event) {
+	for _, evt := range events {
+		s.setRaw(evt.Key(evt.Status), evt.Value())
+	}
+}
+
+func (s *busSuite) fetchEvents() []models.Event {
+	events := make([]models.Event, 0)
+	var evtVar models.Event
+	txn := s.db.fetch("event:", &evtVar, func(result fetchResult) {
+		evt := result.item.(*models.Event)
+		events = append(events, *evt)
+	})
+	s.Require().NoError(s.db.txn(false, txn))
+	return events
 }
 
 func Test_BusSuite(t *testing.T) {

@@ -17,6 +17,13 @@ const (
 	EventRetryStatus       = uint8(2)
 )
 
+// AllowedEventStatus represents the allowed statuses for an event
+var AllowedEventStatus = map[uint8]struct{}{
+	EventUnprocessedStatus: {},
+	EventProcessedStatus:   {},
+	EventRetryStatus:       {},
+}
+
 // Event represents the the event structure in the Event Bus
 type Event struct {
 	ID        string          `json:"id"`

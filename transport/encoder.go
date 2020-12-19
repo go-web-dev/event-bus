@@ -10,6 +10,7 @@ import (
 	"github.com/go-web-dev/event-bus/models"
 )
 
+// Response represents generic Event Bus response
 type Response struct {
 	Operation string      `json:"operation"`
 	Status    bool        `json:"status"`

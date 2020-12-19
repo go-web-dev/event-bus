@@ -71,7 +71,7 @@ func (s *controllersSuite) Test_NewRouter() {
 func (s *controllersSuite) Test_Switch_Health() {
 	expectedRes := transport.Response{
 		Operation: "health",
-		Status: true,
+		Status:    true,
 	}
 	s.write("health", "")
 
@@ -85,7 +85,7 @@ func (s *controllersSuite) Test_Switch_Health() {
 func (s *controllersSuite) Test_Switch_Exit() {
 	expectedRes := transport.Response{
 		Operation: "exit",
-		Status: true,
+		Status:    true,
 	}
 	s.write("exit", "")
 
@@ -108,8 +108,8 @@ func (s *controllersSuite) Test_Switch_WrongCommandError() {
 func (s *controllersSuite) Test_Switch_AuthError() {
 	expectedRes := transport.Response{
 		Operation: "create_stream",
-		Status: false,
-		Reason: "unauthorized to make request",
+		Status:    false,
+		Reason:    "unauthorized to make request",
 	}
 	s.write("create_stream", "")
 	s.cfg.
@@ -127,8 +127,8 @@ func (s *controllersSuite) Test_Switch_AuthError() {
 func (s *controllersSuite) Test_Switch_DecodeError() {
 	expectedRes := transport.Response{
 		Operation: "decode_request",
-		Status: false,
-		Reason: "invalid json provided",
+		Status:    false,
+		Reason:    "invalid json provided",
 	}
 	expectedErr := models.Error{
 		Message: "invalid character ',' looking for beginning of object key string",
@@ -163,6 +163,48 @@ func (s *controllersSuite) read() transport.Response {
 	s.Require().NoError(err)
 	s.Require().NoError(json.Unmarshal(bs, &res))
 	return res
+}
+
+func (s *controllersSuite) testNilRequest(operation string, context JSON, fields []models.RequiredField) {
+	expectedRes := transport.Response{
+		Operation: operation,
+		Status:    false,
+		Reason:    "missing required fields",
+		Context:   context,
+	}
+	expectedErr := models.OperationRequestError{
+		Body: fields,
+	}
+	s.write(operation, "")
+	s.cfg.
+		On("GetAuth").
+		Return(s.auth).
+		Once()
+
+	exited, err := s.router.Switch(s.rw, s.rw)
+
+	s.Equal(expectedErr, err)
+	s.False(exited)
+	s.Equal(expectedRes, s.read())
+}
+
+func (s *controllersSuite) testParseRequest(operation string, body string) {
+	expectedRes := transport.Response{
+		Operation: operation,
+		Status:    false,
+		Reason:    "invalid json provided",
+	}
+	s.write(operation, body)
+	s.cfg.
+		On("GetAuth").
+		Return(s.auth).
+		Once()
+
+	exited, err := s.router.Switch(s.rw, s.rw)
+
+	s.Equal(models.InvalidJSONError{}, err)
+	s.False(exited)
+	s.Equal(expectedRes, s.read())
 }
 
 func Test_ControllersSuite(t *testing.T) {

@@ -1,9 +1,7 @@
 package controllers
 
 import (
-	"fmt"
 	"io"
-	"strings"
 
 	"github.com/go-web-dev/event-bus/models"
 	"github.com/go-web-dev/event-bus/transport"
@@ -26,17 +24,8 @@ func (router Router) markEvent(bus eventMarker) func(io.Writer, request) error {
 			transport.SendError(w, markEventOperation, err)
 			return err
 		}
-		statuses := map[uint8]string{
-			models.EventUnprocessedStatus: "unprocessed",
-			models.EventProcessedStatus:   "processed",
-			models.EventRetryStatus:       "retry",
-		}
-		if _, ok := statuses[body.Status]; !ok {
-			fields := make([]string, 0)
-			for k, v := range statuses {
-				fields = append(fields, fmt.Sprintf("'%d - %s'", k, v))
-			}
-			e := fmt.Errorf("status must be one of: %s", strings.Join(fields, ","))
+		if _, ok := models.AllowedEventStatus[body.Status]; !ok {
+			e := models.InvalidEventStatusError{}
 			transport.SendError(w, markEventOperation, e)
 			return e
 		}

@@ -5,14 +5,14 @@ import (
 	"github.com/go-web-dev/event-bus/transport"
 )
 
-func (s *controllersSuite) Test_CreateStream_Success() {
+func (s *controllersSuite) Test_GetStreamInfo_Success() {
 	expectedStream := models.Stream{
-		ID:        "stream-id",
+		ID:        "some-stream-id",
 		Name:      "some-stream-name",
 		CreatedAt: testTime,
 	}
 	expectedRes := transport.Response{
-		Operation: "create_stream",
+		Operation: "get_stream_info",
 		Status:    true,
 		Body: JSON{
 			"stream": JSON{
@@ -22,13 +22,13 @@ func (s *controllersSuite) Test_CreateStream_Success() {
 			},
 		},
 	}
-	s.write("create_stream", `{"stream_name": "some-stream-name"}`)
+	s.write("get_stream_info", `{"stream_name": "some-stream-name"}`)
 	s.cfg.
 		On("GetAuth").
 		Return(s.auth).
 		Once()
 	s.bus.
-		On("CreateStream", "some-stream-name").
+		On("GetStreamInfo", "some-stream-name").
 		Return(expectedStream, nil).
 		Once()
 
@@ -39,7 +39,7 @@ func (s *controllersSuite) Test_CreateStream_Success() {
 	s.Equal(expectedRes, s.read())
 }
 
-func (s *controllersSuite) Test_CreateStream_NilReqError() {
+func (s *controllersSuite) Test_GetStreamInfo_NilReqError() {
 	ctx := JSON{
 		"body": []interface{}{
 			JSON{
@@ -56,26 +56,26 @@ func (s *controllersSuite) Test_CreateStream_NilReqError() {
 			Required: true,
 		},
 	}
-	s.testNilRequest("create_stream", ctx, fields)
+	s.testNilRequest("get_stream_info", ctx, fields)
 }
 
-func (s *controllersSuite) Test_CreateStream_ParseReqError() {
-	s.testParseRequest("create_stream", `{"stream_name": 1}`)
+func (s *controllersSuite) Test_GetStreamInfo_ParseReqError() {
+	s.testParseRequest("get_stream_info", `{"stream_name": 1}`)
 }
 
-func (s *controllersSuite) Test_CreateStream_ServiceError() {
+func (s *controllersSuite) Test_GetStreamInfo_ServiceError() {
 	expectedRes := transport.Response{
-		Operation: "create_stream",
+		Operation: "get_stream_info",
 		Status:    false,
 		Reason:    errTest.Error(),
 	}
-	s.write("create_stream", `{"stream_name": "some-stream-name"}`)
+	s.write("get_stream_info", `{"stream_name": "some-stream-name"}`)
 	s.cfg.
 		On("GetAuth").
 		Return(s.auth).
 		Once()
 	s.bus.
-		On("CreateStream", "some-stream-name").
+		On("GetStreamInfo", "some-stream-name").
 		Return(models.Stream{}, errTest).
 		Once()
 

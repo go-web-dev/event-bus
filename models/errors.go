@@ -54,6 +54,22 @@ func (e OperationNotFoundError) Error() string {
 	)
 }
 
+// InvalidEventStatusError is returned when marking an event with an invalid status
+type InvalidEventStatusError struct {
+}
+
+func (e InvalidEventStatusError) Error() string {
+	ops := []string{
+		"0 - unprocessed",
+		"1 - processed",
+		"2 - retry",
+	}
+	return fmt.Sprintf(
+		"status must be one of: %s",
+		strings.Join(ops, "', '"),
+	)
+}
+
 // InvalidJSONError is returned in case there is any type of JSON errors
 type InvalidJSONError struct {
 }

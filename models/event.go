@@ -50,5 +50,5 @@ func (e Event) Value() []byte {
 
 // ExpiresAt represents the TTL for an event to be stored inside the database
 func (e Event) ExpiresAt() uint64 {
-	return uint64(e.CreatedAt.Add(time.Hour * 720).UnixNano())
+	return uint64(e.CreatedAt.Add(time.Hour * 720).Unix())
 }

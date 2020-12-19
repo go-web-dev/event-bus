@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"bytes"
+	"github.com/dgraph-io/badger/v2"
 	"io"
 	"io/ioutil"
 	"testing"
@@ -50,6 +51,15 @@ func Logger(t *testing.T, entry *zapcore.Entry) *zap.Logger {
 			*entry = e
 		}
 		return nil
-	})))
+	}), zap.AddCaller()))
 	return logger
+}
+
+func NewBadger(t *testing.T) *badger.DB {
+	dbOptions := badger.DefaultOptions("")
+	dbOptions.Logger = nil
+	dbOptions = dbOptions.WithInMemory(true)
+	badgerDB, err := badger.Open(dbOptions)
+	require.NoError(t, err)
+	return badgerDB
 }

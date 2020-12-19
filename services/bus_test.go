@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgraph-io/badger/v2"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap/zapcore"
 
@@ -31,7 +30,7 @@ type busSuite struct {
 
 func (s *busSuite) SetupSuite() {
 	logging.Logger = testutils.Logger(s.T(), &s.loggerEntry)
-	s.db = db{DB: s.newBadger()}
+	s.db = db{DB: testutils.NewBadger(s.T())}
 }
 
 func (s *busSuite) SetupTest() {
@@ -382,15 +381,6 @@ func (s *busSuite) Test_Bus_ProcessEvents_StreamNotFound() {
 
 	s.EqualError(err, "stream 'non-existent-stream' not found")
 	s.Empty(events)
-}
-
-func (s busSuite) newBadger() *badger.DB {
-	dbOptions := badger.DefaultOptions("")
-	dbOptions.Logger = nil
-	dbOptions = dbOptions.WithInMemory(true)
-	badgerDB, err := badger.Open(dbOptions)
-	s.Require().NoError(err)
-	return badgerDB
 }
 
 func (s *busSuite) setRaw(key, value []byte) {

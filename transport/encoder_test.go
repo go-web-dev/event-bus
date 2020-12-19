@@ -14,11 +14,11 @@ import (
 
 type encoderSuite struct {
 	testutils.Suite
-	logEntry zapcore.Entry
+	loggerEntry zapcore.Entry
 }
 
 func (s *encoderSuite) SetupSuite() {
-	logging.Logger = testutils.Logger(s.T(), &s.logEntry)
+	logging.Logger = testutils.Logger(s.T(), &s.loggerEntry)
 }
 
 func (s *encoderSuite) TestSendJSON_Success() {
@@ -46,7 +46,7 @@ func (s *encoderSuite) TestSendJSON_Error() {
 
 	SendJSON(rw, "great_op", make(chan int))
 
-	s.Equal(s.logEntry.Message, "could not encode json response")
+	s.Equal(s.loggerEntry.Message, "could not encode json response")
 	s.Empty(s.ReadAll(s.T(), rw))
 }
 

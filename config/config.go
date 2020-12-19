@@ -64,14 +64,14 @@ func (m *Manager) setDefaults() {
 	m.viper.SetDefault(loggerOutput, "stdout")
 }
 
-// GetLoggerOutput gets logger output from config file
-func (m *Manager) GetLoggerOutput() []string {
-	return m.viper.GetStringSlice(loggerOutput)
-}
-
 // GetLoggerLevel gets logger atomic level level
 func (m *Manager) GetLoggerLevel() string {
 	return m.viper.GetString(loggerLevel)
+}
+
+// GetLoggerOutput gets logger output from config file
+func (m *Manager) GetLoggerOutput() []string {
+	return m.viper.GetStringSlice(loggerOutput)
 }
 
 // GetAuth gets all allowed clients authentication details from config file

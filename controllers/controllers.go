@@ -3,13 +3,9 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
+	"go.uber.org/zap"
 	"io"
 	"reflect"
-	"strings"
-
-	"go.uber.org/zap"
 
 	"github.com/go-web-dev/event-bus/config"
 	"github.com/go-web-dev/event-bus/logging"
@@ -54,16 +50,23 @@ type EventBus interface {
 	eventProcessor
 }
 
+// ConfigManager represents the application configuration manager
+type ConfigManager interface {
+	GetAuth() config.ClientAuth
+	GetLoggerLevel() string
+	GetLoggerOutput() []string
+}
+
 type operator func(io.Writer, request) error
 
 // Router represents the Event Bus operation router switch
 type Router struct {
 	operations map[string]operator
-	cfg        *config.Manager
+	cfg        ConfigManager
 }
 
 // NewRouter creates a new instance of Router switch operation
-func NewRouter(b EventBus, cfg *config.Manager) Router {
+func NewRouter(b EventBus, cfg ConfigManager) Router {
 	router := Router{
 		cfg: cfg,
 	}
@@ -94,17 +97,10 @@ func (router Router) Switch(w io.Writer, r io.Reader) (bool, error) {
 	err := transport.Decode(r, &req)
 	if err != nil {
 		transport.SendError(w, decodeOperation, models.InvalidJSONError{})
-		return false, fmt.Errorf("could not decode request :%s", err)
+		return false, models.Error{Message: err.Error()}
 	}
 
-	ops := make([]string, 0)
-	for op := range router.operations {
-		ops = append(ops, op)
-	}
-	notFoundErr := fmt.Errorf(
-		"operation must be one of: '%s'",
-		strings.Join(ops, "', '"),
-	)
+	notFoundErr := models.OperationNotFoundError{}
 	operation, ok := router.operations[req.Operation]
 	if !ok {
 		transport.SendError(w, decodeOperation, notFoundErr)
@@ -119,7 +115,7 @@ func (router Router) Switch(w io.Writer, r io.Reader) (bool, error) {
 	}
 
 	if err := router.auth(req); err != nil {
-		transport.SendError(w, req.Operation, models.AuthError{})
+		transport.SendError(w, req.Operation, err)
 		return false, err
 	}
 
@@ -134,7 +130,7 @@ func (router Router) auth(r request) error {
 			return nil
 		}
 	}
-	return errors.New("unauthorized to make request")
+	return models.AuthError{}
 }
 
 func parseReq(r request, body interface{}) error {

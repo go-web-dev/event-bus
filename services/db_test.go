@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	testError = errors.New("some test error")
+	errTest = errors.New("some test error")
 )
 
 type dbSuite struct {
@@ -70,7 +70,7 @@ func (s *dbSuite) Test_db_txn_Error() {
 	}
 	txn2 := func(txn *badger.Txn) error {
 		s.Require().NoError(txn.Set([]byte("key2"), []byte("value2")))
-		return testError
+		return errTest
 	}
 	txn3 := func(txn *badger.Txn) error {
 		s.Require().NoError(txn.Set([]byte("key3"), []byte("value3")))
@@ -79,7 +79,7 @@ func (s *dbSuite) Test_db_txn_Error() {
 
 	err := s.db.txn(true, txn1, txn2, txn3)
 
-	s.Equal(testError, err)
+	s.Equal(errTest, err)
 	_, _, found := s.get("key1")
 	s.False(found)
 	_, _, found = s.get("key2")

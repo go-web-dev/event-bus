@@ -55,6 +55,7 @@ func Logger(t *testing.T, entry *zapcore.Entry) *zap.Logger {
 	return logger
 }
 
+// NewBadger creates a new in-memory Badger database for testing purposes
 func NewBadger(t *testing.T) *badger.DB {
 	dbOptions := badger.DefaultOptions("")
 	dbOptions.Logger = nil

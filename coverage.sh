@@ -3,7 +3,7 @@
 workdir=".cover"
 profile="$workdir/cover.out"
 show_cover_report_html=0
-tags=""
+tags="test"
 test_failed=0
 
 generate_cover_data() {

@@ -1,3 +1,5 @@
+//+build !test
+
 package main
 
 import (
@@ -58,7 +60,10 @@ func main() {
 		DB:     db,
 	}
 
-	srv := server.ListenAndServe(serverSettings)
+	srv, err := server.ListenAndServe(serverSettings)
+	if err != nil {
+		log.Fatal("could not create server listener: ", err)
+	}
 
 	select {
 	case <-stop:

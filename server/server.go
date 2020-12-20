@@ -3,8 +3,8 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
-	"log"
 	"net"
 	"time"
 
@@ -35,10 +35,10 @@ type Server struct {
 }
 
 // ListenAndServe spins up the Event Bus TCP server
-func ListenAndServe(settings Settings) *Server {
+func ListenAndServe(settings Settings) (*Server, error) {
 	li, err := net.Listen("tcp", settings.Addr)
 	if err != nil {
-		log.Fatal("could not create server listener:", err)
+		return nil, err
 	}
 	srv := &Server{
 		listener:    li,
@@ -49,7 +49,7 @@ func ListenAndServe(settings Settings) *Server {
 		db:          settings.DB,
 	}
 	go srv.serve()
-	return srv
+	return srv, nil
 }
 
 // Stop is responsible for cleanup process before application server shutdown
@@ -122,7 +122,7 @@ func (srv *Server) handle(conn net.Conn) {
 
 		exited, err := srv.router.Switch(conn, bytes.NewReader(scanner.Bytes()))
 		if err != nil {
-			logger.Debug("switch error", zap.Error(err))
+			logger.Error("switch error", zap.Error(err))
 		}
 		if exited {
 			break
@@ -132,6 +132,7 @@ func (srv *Server) handle(conn net.Conn) {
 
 func (srv *Server) closeConnections() {
 	logging.Logger.Info("closing all connections")
+	fmt.Println("len of connections", len(srv.connections))
 	for id, conn := range srv.connections {
 		srv.closeConn(conn, id)
 	}
@@ -141,9 +142,10 @@ func (srv *Server) closeConn(conn net.Conn, connID int) {
 	logger := logging.Logger
 	err := conn.Close()
 	if err != nil {
-		logger.Debug(
+		logger.Error(
 			"could not close connection",
 			zap.Int("client_id", connID),
+			zap.Error(err),
 		)
 	}
 }

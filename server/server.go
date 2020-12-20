@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/go-web-dev/event-bus/logging"
-	"github.com/go-web-dev/event-bus/services"
 )
 
 type router interface {
@@ -22,7 +21,7 @@ type router interface {
 type Settings struct {
 	Addr   string
 	Router router
-	DB     services.DB
+	DB     io.Closer
 }
 
 // Server represents the Event Bus TCP server
@@ -32,7 +31,7 @@ type Server struct {
 	exited      chan struct{}
 	connections map[int]net.Conn
 	router      router
-	db          services.DB
+	db          io.Closer
 }
 
 // ListenAndServe spins up the Event Bus TCP server
@@ -105,7 +104,7 @@ func (srv *Server) serve() {
 				logger.Info("client joined", zap.Int("client_id", connID))
 				srv.handle(conn)
 				delete(srv.connections, connID)
-				closeConn(conn, connID)
+				srv.closeConn(conn, connID)
 				logger.Info("client left", zap.Int("client_id", connID))
 			}(id)
 			id++
@@ -134,11 +133,11 @@ func (srv *Server) handle(conn net.Conn) {
 func (srv *Server) closeConnections() {
 	logging.Logger.Info("closing all connections")
 	for id, conn := range srv.connections {
-		closeConn(conn, id)
+		srv.closeConn(conn, id)
 	}
 }
 
-func closeConn(conn net.Conn, connID int) {
+func (srv *Server) closeConn(conn net.Conn, connID int) {
 	logger := logging.Logger
 	err := conn.Close()
 	if err != nil {

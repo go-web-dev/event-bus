@@ -29,8 +29,8 @@ parse_cmd_flags() {
             --html)
                 show_cover_report_html=1
             ;;
-          --intgr)
-                tag="$tag intgr"
+          --integration)
+                tag="$tag integration"
             ;;
         esac
     done

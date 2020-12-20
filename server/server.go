@@ -3,7 +3,6 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"net"
 	"time"
@@ -132,7 +131,6 @@ func (srv *Server) handle(conn net.Conn) {
 
 func (srv *Server) closeConnections() {
 	logging.Logger.Info("closing all connections")
-	fmt.Println("len of connections", len(srv.connections))
 	for id, conn := range srv.connections {
 		srv.closeConn(conn, id)
 	}

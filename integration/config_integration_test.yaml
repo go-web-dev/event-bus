@@ -1,0 +1,9 @@
+logger:
+  level: debug
+  output:
+    - stdout
+
+auth:
+  integration:
+    client_id: "integration_client_id"
+    client_secret: "integration_client_secret"

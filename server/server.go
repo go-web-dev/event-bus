@@ -75,22 +75,24 @@ func (srv *Server) serve() {
 		select {
 		case <-srv.quit:
 			logger.Info("shutting down the event bus server")
+			srv.closeConnections()
 			err := srv.listener.Close()
 			if err != nil {
 				logger.Error("could not close listener", zap.Error(err))
 			}
-			srv.closeConnections()
 			close(srv.exited)
 			return
 		default:
 			tcpListener := srv.listener.(*net.TCPListener)
-			err := tcpListener.SetDeadline(time.Now().Add(2 * time.Second))
+			err := tcpListener.SetDeadline(time.Now().Add(500 * time.Millisecond))
 			if err != nil {
 				logger.Error("failed to set listener deadline", zap.Error(err))
 			}
 
 			conn, err := tcpListener.Accept()
 			if oppErr, ok := err.(*net.OpError); ok && oppErr.Timeout() {
+				// connection timed out - make sure to delete it from local map
+				delete(srv.connections, id-1)
 				continue
 			}
 			if err != nil {
@@ -102,8 +104,8 @@ func (srv *Server) serve() {
 			go func(connID int) {
 				logger.Info("client joined", zap.Int("client_id", connID))
 				srv.handle(conn)
-				delete(srv.connections, connID)
 				srv.closeConn(conn, connID)
+				delete(srv.connections, connID)
 				logger.Info("client left", zap.Int("client_id", connID))
 			}(id)
 			id++
@@ -139,6 +141,7 @@ func (srv *Server) closeConnections() {
 func (srv *Server) closeConn(conn net.Conn, connID int) {
 	logger := logging.Logger
 	err := conn.Close()
+	//time.Sleep(20*time.Millisecond)
 	if err != nil {
 		logger.Error(
 			"could not close connection",

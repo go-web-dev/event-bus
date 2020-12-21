@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -25,12 +26,15 @@ const (
 type appSuite struct {
 	testutils.Suite
 	server *server.Server
+	auth   string
+	cfg    *config.Manager
 }
 
 func (s *appSuite) SetupSuite() {
 	logging.Logger = testutils.Logger(s.T(), nil)
 	cfg, err := config.NewManager(testCfgFile)
 	s.Require().NoError(err)
+	s.cfg = cfg
 	db := testutils.NewBadger(s.T())
 	bus := services.NewBus(db)
 	s.Require().NoError(bus.Init())
@@ -44,6 +48,17 @@ func (s *appSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.server = srv
 	s.waitForServer()
+}
+
+func (s *appSuite) SetupTest() {
+	auth := s.cfg.GetAuth()
+	integrationClient, ok := auth["integration"]
+	s.Require().True(ok)
+	s.auth = fmt.Sprintf(
+		`{"client_id": "%s", "client_secret": "%s"}`,
+		integrationClient.ClientID,
+		integrationClient.ClientSecret,
+	)
 }
 
 func (s *appSuite) TearDownSuite() {
@@ -71,6 +86,20 @@ func (s *appSuite) newConn() net.Conn {
 	conn, err := net.Dial("tcp", addr)
 	s.Require().NoError(err)
 	return conn
+}
+
+func (s *appSuite) write(conn net.Conn, operation, body string) {
+	req := fmt.Sprintf(`{"operation": "%s"`, operation)
+	if s.auth != "" {
+		req += fmt.Sprintf(`, "auth": %s`, s.auth)
+	}
+	if body != "" {
+		req += fmt.Sprintf(`, "body": %s`, s.auth)
+	}
+	req += "}\n"
+
+	_, err := conn.Write([]byte(req))
+	s.Require().NoError(err)
 }
 
 func Test_App(t *testing.T) {

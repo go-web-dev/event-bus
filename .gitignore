@@ -1,6 +1,6 @@
 .idea/
-.cover/
+.coverage/
 badger/
-backups/
 event-bus
 app.log
+.DS_Store

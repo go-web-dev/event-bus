@@ -141,7 +141,6 @@ func (srv *Server) closeConnections() {
 func (srv *Server) closeConn(conn net.Conn, connID int) {
 	logger := logging.Logger
 	err := conn.Close()
-	//time.Sleep(20*time.Millisecond)
 	if err != nil {
 		logger.Error(
 			"could not close connection",

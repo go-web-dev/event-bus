@@ -1,7 +1,7 @@
 #!/bin/sh
 
-workdir=".cover"
-profile="$workdir/cover.out"
+workdir=".coverage"
+profile="$workdir/coverage.out"
 show_cover_report_html=0
 tags="test"
 test_failed=0
@@ -42,7 +42,7 @@ show_cover_report func
 
 if [ "$show_cover_report_html" -eq 1 ]; then
     show_cover_report html
-    go tool cover -html="$profile" -o="$workdir/cover.html"
+    go tool cover -html="$profile" -o="$workdir/coverage.html"
 fi
 
 exit $test_failed

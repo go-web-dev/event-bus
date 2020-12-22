@@ -1,3 +1,8 @@
+[![Build Status](https://travis-ci.org/go-web-dev/event-bus.svg?branch=master)](https://travis-ci.org/go-web-dev/event-bus)
+[![codecov](https://codecov.io/gh/go-web-dev/event-bus/branch/master/graph/badge.svg)](https://codecov.io/gh/go-web-dev/event-bus)
+[![Go Report Card](https://goreportcard.com/badge/github.com/go-web-dev/event-bus)](https://goreportcard.com/report/github.com/go-web-dev/event-bus)
+[![GoDoc](https://godoc.org/github.com/go-web-dev/event-bus?status.svg)](https://godoc.org/github.com/go-web-dev/event-bus)
+
 # Event Bus in Go
 
 Event Bus is a ***TCP*** server accepting multiple connections

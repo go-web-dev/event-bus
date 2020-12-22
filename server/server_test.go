@@ -65,7 +65,7 @@ func (s *serverSuite) Test_Server_OpenConnections() {
 	conn2 := s.newConn(s.settings.Addr)
 	s.connWrite(conn2, `{"operation": "conn2"}`)
 
-	s.waitForConnections(s.server,2)
+	s.waitForConnections(s.server, 2)
 	s.Equal(2, len(s.server.connections))
 }
 
@@ -80,7 +80,7 @@ func (s *serverSuite) Test_Server_ClosedConnections() {
 	conn2 := s.newConn(s.settings.Addr)
 	s.connWrite(conn2, `{"operation": "conn2"}`)
 
-	s.waitForConnections(s.server,0)
+	s.waitForConnections(s.server, 0)
 	s.Equal(0, len(s.server.connections))
 }
 
@@ -125,7 +125,7 @@ func (s *serverSuite) Test_Server_Switch_Error() {
 	conn1 := s.newConn(s.settings.Addr)
 	s.connWrite(conn1, `{"operation": "conn1"}`)
 
-	s.waitForConnections(s.server,1)
+	s.waitForConnections(s.server, 1)
 	s.Equal("switch error", s.loggerEntry.Message)
 }
 
@@ -141,6 +141,8 @@ func (s *serverSuite) Test_Server_Switch_CloseConnectionsError() {
 		Router: s.router,
 	})
 	s.Require().NoError(err)
+	tcpListener := srv.listener.(*net.TCPListener)
+	s.Require().NoError(tcpListener.SetDeadline(time.Now().Add(1 * time.Minute)))
 
 	_ = s.newConn("localhost:6000")
 	s.NoError(srv.Stop())

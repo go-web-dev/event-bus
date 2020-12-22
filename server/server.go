@@ -75,11 +75,12 @@ func (srv *Server) serve() {
 		select {
 		case <-srv.quit:
 			logger.Info("shutting down the event bus server")
-			srv.closeConnections()
+			// avoid accepting new connections
 			err := srv.listener.Close()
 			if err != nil {
 				logger.Error("could not close listener", zap.Error(err))
 			}
+			srv.closeConnections()
 			close(srv.exited)
 			return
 		default:

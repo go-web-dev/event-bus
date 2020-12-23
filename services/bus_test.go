@@ -36,7 +36,7 @@ func (s *busSuite) SetupSuite() {
 func (s *busSuite) SetupTest() {
 	s.bus = &Bus{
 		db:      s.db,
-		Streams: map[string]models.Stream{},
+		streams: map[string]models.Stream{},
 	}
 }
 
@@ -47,7 +47,7 @@ func (s *busSuite) TearDownTest() {
 func (s *busSuite) Test_Bus_New() {
 	expected := &Bus{
 		db:      db{s.db},
-		Streams: map[string]models.Stream{},
+		streams: map[string]models.Stream{},
 	}
 
 	bus := NewBus(s.db)
@@ -76,7 +76,7 @@ func (s *busSuite) Test_Bus_Init_Success() {
 	err := s.bus.Init()
 
 	s.Require().NoError(err)
-	s.Equal(expected, s.bus.Streams)
+	s.Equal(expected, s.bus.streams)
 }
 
 func (s *busSuite) Test_Bus_Init_Error() {
@@ -94,7 +94,7 @@ func (s *busSuite) Test_Bus_Init_Error() {
 	err := s.bus.Init()
 
 	s.EqualError(err, "unexpected end of JSON input")
-	s.Equal(expected, s.bus.Streams)
+	s.Equal(expected, s.bus.streams)
 }
 
 func (s *busSuite) Test_Bus_CreateStream_Success() {
@@ -108,7 +108,7 @@ func (s *busSuite) Test_Bus_CreateStream_Success() {
 
 func (s *busSuite) Test_Bus_CreateStream_AlreadyExistsError() {
 	streamName := "hello-stream"
-	s.bus.Streams[streamName] = models.Stream{}
+	s.bus.streams[streamName] = models.Stream{}
 
 	stream, err := s.bus.CreateStream(streamName)
 
@@ -134,12 +134,12 @@ func (s *busSuite) Test_Bus_DeleteStream_Success() {
 	}
 	s.setStreams(stream)
 	s.setEvents(evt1, evt2)
-	s.bus.Streams[streamName] = stream
+	s.bus.streams[streamName] = stream
 
 	err := s.bus.DeleteStream(streamName)
 
 	s.Require().NoError(err)
-	s.Empty(s.bus.Streams)
+	s.Empty(s.bus.streams)
 	s.Empty(s.fetchEvents())
 }
 
@@ -157,7 +157,7 @@ func (s *busSuite) Test_Bus_GetStreamInfo_Success() {
 		CreatedAt: testTime,
 	}
 	s.setStreams(expected)
-	s.bus.Streams[streamName] = expected
+	s.bus.streams[streamName] = expected
 
 	stream, err := s.bus.GetStreamInfo(streamName)
 
@@ -213,7 +213,7 @@ func (s *busSuite) Test_Bus_GetStreamEvents_Success() {
 	expectedEvents := []models.Event{s1Evt1, s1Evt2, s1Evt3}
 	s.setStreams(stream1, stream2)
 	s.setEvents(s1Evt1, s1Evt2, s1Evt3, s2Evt1)
-	s.bus.Streams[streamName] = stream1
+	s.bus.streams[streamName] = stream1
 
 	events, err := s.bus.GetStreamEvents(streamName)
 
@@ -223,7 +223,7 @@ func (s *busSuite) Test_Bus_GetStreamEvents_Success() {
 
 func (s *busSuite) Test_Bus_GetStreamEvents_EmptyResult() {
 	streamName := "stream-name"
-	s.bus.Streams[streamName] = models.Stream{}
+	s.bus.streams[streamName] = models.Stream{}
 
 	stream, err := s.bus.GetStreamEvents(streamName)
 
@@ -246,7 +246,7 @@ func (s *busSuite) Test_Bus_GetStreamEvents_UnmarshalJSONError() {
 		StreamID: streamID,
 	}
 	s.setRaw(evt.Key(0), []byte("}"))
-	s.bus.Streams[streamName] = models.Stream{ID: streamID}
+	s.bus.streams[streamName] = models.Stream{ID: streamID}
 
 	stream, err := s.bus.GetStreamEvents(streamName)
 
@@ -259,7 +259,7 @@ func (s *busSuite) Test_Bus_WriteEvent_Success() {
 	streamName := "stream-name"
 	streamID := "stream-id"
 	evtBody := `{"k": "v"}`
-	s.bus.Streams[streamName] = models.Stream{ID: streamID}
+	s.bus.streams[streamName] = models.Stream{ID: streamID}
 
 	err := s.bus.WriteEvent(streamName, json.RawMessage(evtBody))
 
@@ -287,7 +287,7 @@ func (s *busSuite) Test_Bus_MarkEvent_Success() {
 		Body:     []byte("{}"),
 	}
 	s.setEvents(evt)
-	s.bus.Streams[streamName] = models.Stream{ID: streamID}
+	s.bus.streams[streamName] = models.Stream{ID: streamID}
 
 	err := s.bus.MarkEvent(evtID, 1)
 
@@ -344,8 +344,8 @@ func (s *busSuite) Test_Bus_ProcessEvents_Success() {
 	}
 	s.setStreams(stream1, stream2)
 	s.setEvents(s1Evt1, s1Evt2, s1Evt3, s2Evt1)
-	s.bus.Streams[stream1.Name] = stream1
-	s.bus.Streams[stream2.Name] = stream2
+	s.bus.streams[stream1.Name] = stream1
+	s.bus.streams[stream2.Name] = stream2
 
 	events, err := s.bus.ProcessEvents(streamName, false)
 
@@ -368,7 +368,7 @@ func (s *busSuite) Test_Bus_ProcessEvents_EmptyResult() {
 		Status:   2,
 	}
 	s.setEvents(evt)
-	s.bus.Streams[streamName] = models.Stream{ID: streamID}
+	s.bus.streams[streamName] = models.Stream{ID: streamID}
 
 	events, err := s.bus.ProcessEvents(streamName, false)
 

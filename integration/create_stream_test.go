@@ -54,15 +54,14 @@ func (s *appSuite) Test_CreateStream_MissingBodyError() {
 }
 
 func (s *appSuite) Test_CreateStream_StreamAlreadyExistsError() {
-	s.bus.Streams["test-stream"] = models.Stream{}
 	conn := s.newConn()
 
-	s.write(conn, "create_stream", `{"stream_name": "test-stream"}`)
+	s.write(conn, "create_stream", `{"stream_name": "existing-stream-name"}`)
 
 	var res response
 	s.read(conn, &res)
 	s.Equal("create_stream", res.Operation)
 	s.False(res.Status)
-	s.Equal("stream: 'test-stream' already exists", res.Reason)
+	s.Equal("stream: 'existing-stream-name' already exists", res.Reason)
 	s.Nil(res.Context)
 }

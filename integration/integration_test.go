@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/go-web-dev/event-bus/models"
 	"net"
 	"testing"
 	"time"
@@ -24,6 +25,16 @@ import (
 const (
 	addr        = "localhost:8000"
 	testCfgFile = "./config_integration_test.yaml"
+	testTimeStr = "2020-12-15T05:28:31.490416Z"
+)
+
+var (
+	testTime, _   = time.Parse(time.RFC3339, testTimeStr)
+	initialStream = models.Stream{
+		ID:        "stream-id",
+		Name:      "existing-stream-name",
+		CreatedAt: testTime,
+	}
 )
 
 type JSON = map[string]interface{}
@@ -51,6 +62,7 @@ func (s *appSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.cfg = cfg
 	s.db = testutils.NewBadger(s.T())
+	s.dbInit()
 	s.bus = services.NewBus(s.db)
 	s.Require().NoError(s.bus.Init())
 	router := controllers.NewRouter(s.bus, cfg)
@@ -125,6 +137,12 @@ func (s *appSuite) read(conn net.Conn, res interface{}) {
 	bs, err := bufio.NewReader(conn).ReadBytes('\n')
 	s.Require().NoError(err)
 	s.JSONUnmarshal(bs, res)
+}
+
+func (s *appSuite) dbInit() {
+	s.Require().NoError(s.db.Update(func(txn *badger.Txn) error {
+		return txn.Set(initialStream.Key(), initialStream.Value())
+	}))
 }
 
 func (s *appSuite) dbGet(key []byte) string {

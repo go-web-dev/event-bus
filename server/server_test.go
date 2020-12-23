@@ -54,7 +54,7 @@ func (s *serverSuite) TearDownTest() {
 	s.Require().NoError(s.server.listener.Close())
 }
 
-func (s *serverSuite) Test_Server_OpenConnections() {
+func (s *serverSuite) Test_Switch_OpenConnections() {
 	s.router.
 		On("Switch", mock.AnythingOfType("*net.TCPConn"), mock.AnythingOfType("*bytes.Reader")).
 		Return(false, nil).
@@ -69,7 +69,7 @@ func (s *serverSuite) Test_Server_OpenConnections() {
 	s.Equal(2, len(s.server.connections))
 }
 
-func (s *serverSuite) Test_Server_ClosedConnections() {
+func (s *serverSuite) Test_Switch_ClosedConnections() {
 	s.router.
 		On("Switch", mock.AnythingOfType("*net.TCPConn"), mock.AnythingOfType("*bytes.Reader")).
 		Return(true, nil).
@@ -84,7 +84,17 @@ func (s *serverSuite) Test_Server_ClosedConnections() {
 	s.Equal(0, len(s.server.connections))
 }
 
-func (s *serverSuite) Test_Server_Stop_Success() {
+func (s *serverSuite) Test_Switch_EmptyLine() {
+	conn := s.newConn(s.settings.Addr)
+
+	_, err := conn.Write([]byte("\n"))
+
+	s.Require().NoError(err)
+	s.waitForConnections(s.server, 1)
+	s.Equal("empty request line", s.loggerEntry.Message)
+}
+
+func (s *serverSuite) Test_Stop_Success() {
 	s.db.
 		On("Close").
 		Return(nil).
@@ -100,7 +110,7 @@ func (s *serverSuite) Test_Server_Stop_Success() {
 	s.Require().NoError(srv.Stop())
 }
 
-func (s *serverSuite) Test_Server_Stop_Error() {
+func (s *serverSuite) Test_Stop_Error() {
 	s.db.
 		On("Close").
 		Return(errTest).
@@ -116,7 +126,7 @@ func (s *serverSuite) Test_Server_Stop_Error() {
 	s.Equal(errTest, srv.Stop())
 }
 
-func (s *serverSuite) Test_Server_Switch_Error() {
+func (s *serverSuite) Test_Switch_Error() {
 	s.router.
 		On("Switch", mock.AnythingOfType("*net.TCPConn"), mock.AnythingOfType("*bytes.Reader")).
 		Return(false, errTest).
@@ -129,28 +139,23 @@ func (s *serverSuite) Test_Server_Switch_Error() {
 	s.Equal("switch error", s.loggerEntry.Message)
 }
 
-func (s *serverSuite) Test_Server_Switch_CloseConnectionsError() {
-	s.db.
-		On("Close").
-		Return(nil).
-		Once()
-
+func (s *serverSuite) Test_serve_ConnectionTimeoutError() {
 	srv, err := ListenAndServe(Settings{
-		Addr:   "localhost:6000",
+		Addr:   "localhost:6500",
 		DB:     s.db,
 		Router: s.router,
 	})
 	s.Require().NoError(err)
 	tcpListener := srv.listener.(*net.TCPListener)
-	s.Require().NoError(tcpListener.SetDeadline(time.Now().Add(1 * time.Minute)))
+	s.Require().NoError(tcpListener.SetDeadline(time.Now().Add(50 * time.Millisecond)))
 
-	_ = s.newConn("localhost:6000")
-	s.NoError(srv.Stop())
+	_ = s.newConn("localhost:6500")
+	time.Sleep(200 * time.Millisecond)
 	s.waitForConnections(srv, 0)
-	s.Equal("could not close connection", s.loggerEntry.Message)
+	s.Len(s.server.connections, 0)
 }
 
-func (s *serverSuite) Test_Server_ListenError() {
+func (s *serverSuite) Test_ListenAndServeError() {
 	srv, err := ListenAndServe(Settings{
 		Addr:   "9000",
 		Router: s.router,

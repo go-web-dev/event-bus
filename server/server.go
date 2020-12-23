@@ -119,6 +119,7 @@ func (srv *Server) handle(conn net.Conn) {
 	logger := logging.Logger
 	for scanner.Scan() {
 		if len(scanner.Bytes()) == 0 {
+			logger.Error("empty request line")
 			continue
 		}
 

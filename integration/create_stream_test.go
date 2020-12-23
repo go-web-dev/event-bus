@@ -60,7 +60,7 @@ func (s *appSuite) Test_CreateStream_StreamAlreadyExistsError() {
 
 	var res response
 	s.read(conn, &res)
-	s.Equal("create_streams", res.Operation)
+	s.Equal("create_stream", res.Operation)
 	s.False(res.Status)
 	s.Equal("stream: 'existing-stream-name' already exists", res.Reason)
 	s.Nil(res.Context)

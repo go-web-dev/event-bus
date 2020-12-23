@@ -17,7 +17,7 @@ generate_cover_data() {
 }
 
 show_cover_report() {
-    go tool cover -${1}="$profile"
+    go tool cover -"${1}"="$profile"
 }
 
 parse_cmd_flags() {
@@ -30,7 +30,7 @@ parse_cmd_flags() {
                 show_cover_report_html=1
             ;;
           --integration)
-                tag="$tag integration"
+                tags="$tags integration"
             ;;
         esac
     done

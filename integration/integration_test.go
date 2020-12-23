@@ -3,11 +3,14 @@
 package integration
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"net"
 	"testing"
 	"time"
 
+	"github.com/dgraph-io/badger/v2"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/go-web-dev/event-bus/config"
@@ -23,11 +26,23 @@ const (
 	testCfgFile = "./config_integration_test.yaml"
 )
 
+type JSON = map[string]interface{}
+
+type response struct {
+	Operation string          `json:"operation"`
+	Status    bool            `json:"status"`
+	Reason    string          `json:"reason,omitempty"`
+	Body      json.RawMessage `json:"body,omitempty"`
+	Context   interface{}     `json:"context,omitempty"`
+}
+
 type appSuite struct {
 	testutils.Suite
 	server *server.Server
 	auth   string
 	cfg    *config.Manager
+	db     *badger.DB
+	bus    *services.Bus
 }
 
 func (s *appSuite) SetupSuite() {
@@ -35,14 +50,14 @@ func (s *appSuite) SetupSuite() {
 	cfg, err := config.NewManager(testCfgFile)
 	s.Require().NoError(err)
 	s.cfg = cfg
-	db := testutils.NewBadger(s.T())
-	bus := services.NewBus(db)
-	s.Require().NoError(bus.Init())
-	router := controllers.NewRouter(bus, cfg)
+	s.db = testutils.NewBadger(s.T())
+	s.bus = services.NewBus(s.db)
+	s.Require().NoError(s.bus.Init())
+	router := controllers.NewRouter(s.bus, cfg)
 	settings := server.Settings{
 		Addr:   addr,
 		Router: router,
-		DB:     db,
+		DB:     s.db,
 	}
 	srv, err := server.ListenAndServe(settings)
 	s.Require().NoError(err)
@@ -59,6 +74,10 @@ func (s *appSuite) SetupTest() {
 		integrationClient.ClientID,
 		integrationClient.ClientSecret,
 	)
+}
+
+func (s *appSuite) TearDownTest() {
+	s.Require().NoError(s.db.DropAll())
 }
 
 func (s *appSuite) TearDownSuite() {
@@ -94,12 +113,39 @@ func (s *appSuite) write(conn net.Conn, operation, body string) {
 		req += fmt.Sprintf(`, "auth": %s`, s.auth)
 	}
 	if body != "" {
-		req += fmt.Sprintf(`, "body": %s`, s.auth)
+		req += fmt.Sprintf(`, "body": %s`, body)
 	}
 	req += "}\n"
 
 	_, err := conn.Write([]byte(req))
 	s.Require().NoError(err)
+}
+
+func (s *appSuite) read(conn net.Conn, res interface{}) {
+	bs, err := bufio.NewReader(conn).ReadBytes('\n')
+	s.Require().NoError(err)
+	s.JSONUnmarshal(bs, res)
+}
+
+func (s *appSuite) dbGet(key []byte) string {
+	var v string
+	s.Require().NoError(s.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		if err != nil {
+			return err
+		}
+		return item.Value(func(val []byte) error {
+			v = string(val)
+			return nil
+		})
+	}))
+	return v
+}
+
+func (s *appSuite) dbSet(key []byte, value []byte) {
+	s.Require().NoError(s.db.Update(func(txn *badger.Txn) error {
+		return txn.Set(key, value)
+	}))
 }
 
 func Test_App(t *testing.T) {

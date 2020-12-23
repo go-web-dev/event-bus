@@ -19,7 +19,7 @@ import (
 func NewBus(d DB) *Bus {
 	b := &Bus{
 		db:      db{d},
-		streams: map[string]models.Stream{},
+		Streams: map[string]models.Stream{},
 	}
 	return b
 }
@@ -28,7 +28,7 @@ func NewBus(d DB) *Bus {
 type Bus struct {
 	mu      sync.Mutex
 	db      db
-	streams map[string]models.Stream
+	Streams map[string]models.Stream
 }
 
 // Init initializes the event bus with helper data such as streams
@@ -41,7 +41,7 @@ func (b *Bus) Init() error {
 	var streamVar models.Stream
 	txn := b.db.fetch("stream:", &streamVar, func(res fetchResult) {
 		stream := res.item.(*models.Stream)
-		b.streams[stream.Name] = *stream
+		b.Streams[stream.Name] = *stream
 	})
 	err := b.db.txn(false, txn)
 	if err != nil {
@@ -59,7 +59,7 @@ func (b *Bus) CreateStream(streamName string) (models.Stream, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if _, ok := b.streams[streamName]; ok {
+	if _, ok := b.Streams[streamName]; ok {
 		return models.Stream{}, fmt.Errorf("stream: '%s' already exists", streamName)
 	}
 	stream := models.Stream{
@@ -73,7 +73,7 @@ func (b *Bus) CreateStream(streamName string) (models.Stream, error) {
 		logger.Debug("could not save stream to db", zap.Error(err))
 		return models.Stream{}, err
 	}
-	b.streams[streamName] = stream
+	b.Streams[streamName] = stream
 	logger.Info("successfully created stream", zap.String("stream_id", stream.ID))
 	return stream, nil
 }
@@ -108,7 +108,7 @@ func (b *Bus) DeleteStream(streamName string) error {
 		return err
 	}
 
-	delete(b.streams, streamName)
+	delete(b.Streams, streamName)
 	logger.Info("successfully deleted stream", zap.String("stream_id", stream.ID))
 	return nil
 }
@@ -249,7 +249,7 @@ func (b *Bus) ProcessEvents(streamName string, retry bool) ([]models.Event, erro
 }
 
 func (b *Bus) streamLookup(streamName string) (models.Stream, error) {
-	stream, ok := b.streams[streamName]
+	stream, ok := b.Streams[streamName]
 	if !ok {
 		return models.Stream{}, fmt.Errorf("stream '%s' not found", streamName)
 	}

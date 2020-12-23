@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/dgraph-io/badger/v2"
 	"io"
 	"io/ioutil"
@@ -20,9 +21,23 @@ type Suite struct {
 }
 
 // ReadAll is an extra functionality in the testify suite for reading all from a reader
-func (s *Suite) ReadAll(t *testing.T, r io.Reader) string {
+func (s *Suite) ReadAll(r io.Reader) string {
 	bs, err := ioutil.ReadAll(r)
-	require.NoError(t, err)
+	s.Require().NoError(err)
+	return string(bs)
+}
+
+// JSONUnmarshal does the unmarshal process.
+// Meant to be used for testing purposes
+func (s *Suite) JSONUnmarshal(data []byte, v interface{}) {
+	s.Require().NoError(json.Unmarshal(data, v))
+}
+
+// JSONMarshal does the marshal process.
+// Meant to be used for testing purposes
+func (s *Suite) JSONMarshal(data interface{}) string {
+	bs, err := json.Marshal(data)
+	s.Require().NoError(err)
 	return string(bs)
 }
 

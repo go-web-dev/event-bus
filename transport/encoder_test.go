@@ -27,8 +27,8 @@ func (s *encoderSuite) TestSendJSON_Success() {
 
 	SendJSON(rw, "great_op", person{Name: "steve"})
 
-	s.JSONEq(expected, s.ReadAll(s.T(), rw))
-	s.Empty(s.ReadAll(s.T(), rw))
+	s.JSONEq(expected, s.ReadAll(rw))
+	s.Empty(s.ReadAll(rw))
 }
 
 func (s *encoderSuite) TestSendJSON_Success_NoBody() {
@@ -37,8 +37,8 @@ func (s *encoderSuite) TestSendJSON_Success_NoBody() {
 
 	SendJSON(rw, "great_op", nil)
 
-	s.JSONEq(expected, s.ReadAll(s.T(), rw))
-	s.Empty(s.ReadAll(s.T(), rw))
+	s.JSONEq(expected, s.ReadAll(rw))
+	s.Empty(s.ReadAll(rw))
 }
 
 func (s *encoderSuite) TestSendJSON_Error() {
@@ -47,7 +47,7 @@ func (s *encoderSuite) TestSendJSON_Error() {
 	SendJSON(rw, "great_op", make(chan int))
 
 	s.Equal(s.loggerEntry.Message, "could not encode json response")
-	s.Empty(s.ReadAll(s.T(), rw))
+	s.Empty(s.ReadAll(rw))
 }
 
 func (s *encoderSuite) TestSendError() {
@@ -56,8 +56,8 @@ func (s *encoderSuite) TestSendError() {
 
 	SendError(rw, "great_op", errors.New("some weird reason"))
 
-	s.JSONEq(expected, s.ReadAll(s.T(), rw))
-	s.Empty(s.ReadAll(s.T(), rw))
+	s.JSONEq(expected, s.ReadAll(rw))
+	s.Empty(s.ReadAll(rw))
 }
 
 func (s *encoderSuite) TestSendError_WithContext() {
@@ -90,8 +90,8 @@ func (s *encoderSuite) TestSendError_WithContext() {
 
 	SendError(rw, "great_op", err)
 
-	s.JSONEq(expected, s.ReadAll(s.T(), rw))
-	s.Empty(s.ReadAll(s.T(), rw))
+	s.JSONEq(expected, s.ReadAll(rw))
+	s.Empty(s.ReadAll(rw))
 }
 
 func Test_EncoderSuite(t *testing.T) {

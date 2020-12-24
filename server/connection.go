@@ -1,10 +1,12 @@
 package server
 
 import (
-	"github.com/go-web-dev/event-bus/logging"
-	"go.uber.org/zap"
 	"net"
 	"sync"
+
+	"go.uber.org/zap"
+
+	"github.com/go-web-dev/event-bus/logging"
 )
 
 type connection struct {

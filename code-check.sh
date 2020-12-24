@@ -15,8 +15,8 @@ if [ -n "$fmtOut" ]; then
 fi
 
 # go vet
-shadowOut=$(go vet -vettool="$(command -v shadow)" -tags="intgr" ./... 2>&1)
-vetOut="${shadowOut}"$(go vet -all -tags="intgr" ./... 2>&1)
+shadowOut=$(go vet -vettool="$(command -v shadow)" -tags="integration" ./... 2>&1)
+vetOut="${shadowOut}"$(go vet -all -tags="integration" ./... 2>&1)
 if [ -n "$vetOut" ]; then
 	printf "go vet issues found:\n%s\n" "$vetOut"
 	status=1

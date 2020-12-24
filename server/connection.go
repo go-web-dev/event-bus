@@ -41,12 +41,6 @@ func (c *connections) close(connID int) {
 		return
 	}
 	conn := connection.conn
-	//conn.SetReadDeadline(time.Now())
-	//var one []byte
-	//if _, err := conn.Read(one); err == io.EOF {
-	//	delete(c.connMap, connID)
-	//	return
-	//}
 
 	err := conn.Close()
 	if err != nil {

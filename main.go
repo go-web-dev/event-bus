@@ -59,7 +59,7 @@ func main() {
 		Addr:     "localhost:8080",
 		Router:   router,
 		DB:       db,
-		Deadline: time.Now().Add(500 * time.Millisecond),
+		Deadline: 500 * time.Millisecond,
 	}
 
 	srv, err := server.ListenAndServe(serverSettings)

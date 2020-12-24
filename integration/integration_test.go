@@ -70,7 +70,7 @@ func (s *appSuite) SetupSuite() {
 		Addr:     addr,
 		Router:   router,
 		DB:       s.db,
-		Deadline: time.Now().Add(500 * time.Millisecond),
+		Deadline: 500 * time.Millisecond,
 	}
 	srv, err := server.ListenAndServe(settings)
 	s.Require().NoError(err)

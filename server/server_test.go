@@ -33,9 +33,10 @@ func (s *serverSuite) SetupSuite() {
 	s.db = new(dbMock)
 	s.router = new(routerMock)
 	s.settings = Settings{
-		Addr:   "localhost:9000",
-		DB:     s.db,
-		Router: s.router,
+		Addr:     "localhost:9000",
+		DB:       s.db,
+		Router:   s.router,
+		Deadline: 500 * time.Millisecond,
 	}
 }
 
@@ -144,14 +145,14 @@ func (s *serverSuite) Test_serve_ConnectionTimeoutError() {
 		Addr:     "localhost:6500",
 		DB:       s.db,
 		Router:   s.router,
-		Deadline: time.Now().Add(200 * time.Millisecond),
+		Deadline: 200 * time.Millisecond,
 	})
 	s.Require().NoError(err)
 
 	_ = s.newConn("localhost:6500")
 	time.Sleep(300 * time.Millisecond)
-	s.waitForConnections(srv, 0)
-	s.Len(srv.connections.connMap, 0)
+	s.waitForConnections(srv, 1)
+	s.Len(srv.connections.connMap, 1)
 }
 
 func (s *serverSuite) Test_ListenAndServeError() {

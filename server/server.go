@@ -21,7 +21,7 @@ type Settings struct {
 	Addr     string
 	Router   router
 	DB       io.Closer
-	Deadline time.Time
+	Deadline time.Duration
 }
 
 // Server represents the Event Bus TCP server
@@ -32,7 +32,7 @@ type Server struct {
 	connections connections
 	router      router
 	db          io.Closer
-	deadline    time.Time
+	deadline    time.Duration
 }
 
 // ListenAndServe spins up the Event Bus TCP server
@@ -87,7 +87,7 @@ func (srv *Server) serve() {
 			return
 		default:
 			tcpListener := srv.listener.(*net.TCPListener)
-			err := tcpListener.SetDeadline(srv.deadline)
+			err := tcpListener.SetDeadline(time.Now().Add(srv.deadline))
 			if srv.closedConnection(err) {
 				return
 			}

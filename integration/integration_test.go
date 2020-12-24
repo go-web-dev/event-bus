@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,10 +31,55 @@ const (
 
 var (
 	testTime, _   = time.Parse(time.RFC3339, testTimeStr)
-	initialStream = models.Stream{
-		ID:        "stream-id",
-		Name:      "existing-stream-name",
+	s1 = models.Stream{
+		ID: "s1-id",
+		Name: "s1-name",
 		CreatedAt: testTime,
+	}
+	s2 = models.Stream{
+		ID: "s2-id",
+		Name: "s2-name",
+		CreatedAt: testTime,
+	}
+	s3 = models.Stream{
+		ID: "s3-id",
+		Name: "s3-name",
+		CreatedAt: testTime,
+	}
+	s1evt1 = models.Event{
+		ID: "evt1-id",
+		StreamID: s1.ID,
+		Status: 0,
+		CreatedAt: testTime,
+		Body: []byte(`{"f1": "v1"}`),
+	}
+	s1evt2 = models.Event{
+		ID: "evt2-id",
+		StreamID: s1.ID,
+		Status: 0,
+		CreatedAt: testTime,
+		Body: []byte(`{"f2": "v2"}`),
+	}
+	s1evt3 = models.Event{
+		ID: "evt3-id",
+		StreamID: s1.ID,
+		Status: 1,
+		CreatedAt: testTime,
+		Body: []byte(`{"f3": "v3"}`),
+	}
+	s1evt4 = models.Event{
+		ID: "evt4-id",
+		StreamID: s1.ID,
+		Status: 2,
+		CreatedAt: testTime,
+		Body: []byte(`{"f4": "v4"}`),
+	}
+	s2evt1 = models.Event{
+		ID: "evt1-id",
+		StreamID: s2.ID,
+		Status: 0,
+		CreatedAt: testTime,
+		Body: []byte(`{"f1": "v1"}`),
 	}
 )
 
@@ -54,6 +100,7 @@ type appSuite struct {
 	cfg    *config.Manager
 	db     *badger.DB
 	bus    *services.Bus
+	wg     sync.WaitGroup
 }
 
 func (s *appSuite) SetupSuite() {
@@ -62,9 +109,7 @@ func (s *appSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.cfg = cfg
 	s.db = testutils.NewBadger(s.T())
-	s.dbInit()
 	s.bus = services.NewBus(s.db)
-	s.Require().NoError(s.bus.Init())
 	router := controllers.NewRouter(s.bus, cfg)
 	settings := server.Settings{
 		Addr:     addr,
@@ -87,10 +132,9 @@ func (s *appSuite) SetupTest() {
 		integrationClient.ClientID,
 		integrationClient.ClientSecret,
 	)
-}
-
-func (s *appSuite) TearDownTest() {
 	s.Require().NoError(s.db.DropAll())
+	s.dbInit()
+	s.Require().NoError(s.bus.Init())
 }
 
 func (s *appSuite) TearDownSuite() {
@@ -164,15 +208,9 @@ func (s *appSuite) read(conn net.Conn, res interface{}) {
 	s.JSONUnmarshal(bs, res)
 }
 
-func (s *appSuite) dbInit() {
-	s.Require().NoError(s.db.Update(func(txn *badger.Txn) error {
-		return txn.Set(initialStream.Key(), initialStream.Value())
-	}))
-}
-
-func (s *appSuite) dbGet(key []byte) string {
+func (s *appSuite) dbGet(key []byte) (string, error) {
 	var v string
-	s.Require().NoError(s.db.View(func(txn *badger.Txn) error {
+	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
 			return err
@@ -181,14 +219,28 @@ func (s *appSuite) dbGet(key []byte) string {
 			v = string(val)
 			return nil
 		})
-	}))
-	return v
+	})
+	if err != nil {
+		return "", err
+	}
+	return v, nil
 }
 
 func (s *appSuite) dbSet(key []byte, value []byte) {
 	s.Require().NoError(s.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, value)
 	}))
+}
+
+func (s *appSuite) dbInit() {
+	s.dbSet(s1.Key(), s1.Value())
+	s.dbSet(s2.Key(), s2.Value())
+	s.dbSet(s3.Key(), s3.Value())
+	s.dbSet(s1evt1.Key(s1evt1.Status), s1evt1.Value())
+	s.dbSet(s1evt2.Key(s1evt2.Status), s1evt2.Value())
+	s.dbSet(s1evt3.Key(s1evt3.Status), s1evt3.Value())
+	s.dbSet(s1evt4.Key(s1evt4.Status), s1evt4.Value())
+	s.dbSet(s2evt1.Key(s2evt1.Status), s2evt1.Value())
 }
 
 func Test_App(t *testing.T) {

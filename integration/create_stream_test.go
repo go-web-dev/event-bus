@@ -3,8 +3,8 @@
 package integration
 
 import (
+	"fmt"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/go-web-dev/event-bus/models"
@@ -20,17 +20,7 @@ func (s *appSuite) Test_CreateStream_Success() {
 
 	s.write(conn, "create_stream", `{"stream_name": "test-stream"}`)
 
-	var res response
-	s.read(conn, &res)
-	var body createStreamResponseBody
-	s.JSONUnmarshal(res.Body, &body)
-	s.Equal("create_stream", res.Operation)
-	s.True(res.Status)
-	s.Equal("test-stream", body.Stream.Name)
-	s.InDelta(time.Now().UTC().Unix(), body.Stream.CreatedAt.Unix(), 1)
-	_, err := uuid.Parse(body.Stream.ID)
-	s.Nil(err)
-	s.JSONEq(s.JSONMarshal(body.Stream), s.dbGet(body.Stream.Key()))
+	s.assertCreateStreamRes(conn, "test-stream")
 }
 
 func (s *appSuite) Test_CreateStream_MissingBodyError() {
@@ -58,14 +48,9 @@ func (s *appSuite) Test_CreateStream_MissingBodyError() {
 func (s *appSuite) Test_CreateStream_StreamAlreadyExistsError() {
 	conn := s.newConn()
 
-	s.write(conn, "create_stream", `{"stream_name": "existing-stream-name"}`)
+	s.write(conn, "create_stream", `{"stream_name": "s1-name"}`)
 
-	var res response
-	s.read(conn, &res)
-	s.Equal("create_stream", res.Operation)
-	s.False(res.Status)
-	s.Equal("stream: 'existing-stream-name' already exists", res.Reason)
-	s.Nil(res.Context)
+	s.assertCreateStreamErr(conn, "s1-name")
 }
 
 func (s *appSuite) Test_CreateStream_Concurrent_Success() {
@@ -73,25 +58,24 @@ func (s *appSuite) Test_CreateStream_Concurrent_Success() {
 	conn2 := s.newConn()
 	conn3 := s.newConn()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
 		s.write(conn1, "create_stream", `{"stream_name": "some-stream-1"}`)
-		wg.Done()
+		s.wg.Done()
 	}()
-	wg.Wait()
-	wg.Add(1)
+	s.wg.Wait()
+	s.wg.Add(1)
 	go func() {
 		s.write(conn2, "create_stream", `{"stream_name": "some-stream-2"}`)
-		wg.Done()
+		s.wg.Done()
 	}()
-	wg.Wait()
-	wg.Add(1)
+	s.wg.Wait()
+	s.wg.Add(1)
 	go func() {
 		s.write(conn3, "create_stream", `{"stream_name": "some-stream-3"}`)
-		wg.Done()
+		s.wg.Done()
 	}()
-	wg.Wait()
+	s.wg.Wait()
 
 	s.assertCreateStreamRes(conn1, "some-stream-1")
 	s.assertCreateStreamRes(conn2, "some-stream-2")
@@ -103,31 +87,30 @@ func (s *appSuite) Test_CreateStream_Concurrent_Error() {
 	conn2 := s.newConn()
 	conn3 := s.newConn()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
 		s.write(conn1, "create_stream", `{"stream_name": "some-stream"}`)
-		wg.Done()
+		s.wg.Done()
 	}()
-	wg.Wait()
-	wg.Add(1)
+	s.wg.Wait()
+	s.wg.Add(1)
 	go func() {
 		time.Sleep(50 * time.Millisecond)
 		s.write(conn2, "create_stream", `{"stream_name": "some-stream"}`)
-		wg.Done()
+		s.wg.Done()
 	}()
-	wg.Wait()
-	wg.Add(1)
+	s.wg.Wait()
+	s.wg.Add(1)
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		s.write(conn3, "create_stream", `{"stream_name": "some-stream"}`)
-		wg.Done()
+		s.wg.Done()
 	}()
-	wg.Wait()
+	s.wg.Wait()
 
 	s.assertCreateStreamRes(conn1, "some-stream")
-	s.assertCreateStreamErr(conn2)
-	s.assertCreateStreamErr(conn3)
+	s.assertCreateStreamErr(conn2, "some-stream")
+	s.assertCreateStreamErr(conn3, "some-stream")
 }
 
 func (s *appSuite) assertCreateStreamRes(conn net.Conn, streamName string) {
@@ -143,13 +126,15 @@ func (s *appSuite) assertCreateStreamRes(conn net.Conn, streamName string) {
 	_, err := uuid.Parse(body.Stream.ID)
 	s.Nil(err)
 
-	s.JSONEq(s.JSONMarshal(body.Stream), s.dbGet(body.Stream.Key()))
+	dbStream, err := s.dbGet(body.Stream.Key())
+	s.Require().NoError(err)
+	s.JSONEq(s.JSONMarshal(body.Stream), dbStream)
 }
 
-func (s *appSuite) assertCreateStreamErr(conn net.Conn) {
+func (s *appSuite) assertCreateStreamErr(conn net.Conn, streamName string) {
 	var res response
 	s.read(conn, &res)
 	s.False(res.Status)
 	s.Equal("create_stream", res.Operation)
-	s.Equal("stream: 'some-stream' already exists", res.Reason)
+	s.Equal(fmt.Sprintf("stream: '%s' already exists", streamName), res.Reason)
 }

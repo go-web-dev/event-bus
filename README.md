@@ -41,8 +41,21 @@ go build
 # run unit tests
 go test ./...
 
-# run tests with coverage
+# run unit tests with coverage
 ./coverage.sh
+
+# run unit & integration tests with coverage
+./coverage.sh --integration
+
+# run unit test with coverage and generate HTML report
+./coverage.sh --html
+```
+
+### Code Check
+
+```sh
+# run code analysis & Go code check
+./code-check
 ```
 
 ### Operations

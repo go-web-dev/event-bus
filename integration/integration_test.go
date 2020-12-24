@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/go-web-dev/event-bus/models"
 	"net"
 	"testing"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/go-web-dev/event-bus/config"
 	"github.com/go-web-dev/event-bus/controllers"
 	"github.com/go-web-dev/event-bus/logging"
+	"github.com/go-web-dev/event-bus/models"
 	"github.com/go-web-dev/event-bus/server"
 	"github.com/go-web-dev/event-bus/services"
 	"github.com/go-web-dev/event-bus/testutils"
@@ -95,6 +95,30 @@ func (s *appSuite) TearDownTest() {
 
 func (s *appSuite) TearDownSuite() {
 	s.Require().NoError(s.server.Stop())
+}
+
+func (s *appSuite) Test_Health() {
+	conn := s.newConn()
+
+	s.write(conn, "health", "")
+
+	var res response
+	s.read(conn, &res)
+	s.Equal("health", res.Operation)
+	s.True(res.Status)
+	s.Empty(res.Body)
+}
+
+func (s *appSuite) Test_Exit() {
+	conn := s.newConn()
+
+	s.write(conn, "exit", "")
+
+	var res response
+	s.read(conn, &res)
+	s.Equal("exit", res.Operation)
+	s.True(res.Status)
+	s.Empty(res.Body)
 }
 
 func (s *appSuite) waitForServer() {

@@ -67,9 +67,10 @@ func (s *appSuite) SetupSuite() {
 	s.Require().NoError(s.bus.Init())
 	router := controllers.NewRouter(s.bus, cfg)
 	settings := server.Settings{
-		Addr:   addr,
-		Router: router,
-		DB:     s.db,
+		Addr:     addr,
+		Router:   router,
+		DB:       s.db,
+		Deadline: time.Now().Add(500 * time.Millisecond),
 	}
 	srv, err := server.ListenAndServe(settings)
 	s.Require().NoError(err)

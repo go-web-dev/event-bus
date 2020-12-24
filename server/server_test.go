@@ -66,7 +66,7 @@ func (s *serverSuite) Test_Switch_OpenConnections() {
 	s.connWrite(conn2, `{"operation": "conn2"}`)
 
 	s.waitForConnections(s.server, 2)
-	s.Equal(2, len(s.server.connections))
+	s.Equal(2, len(s.server.connections.connMap))
 }
 
 func (s *serverSuite) Test_Switch_ClosedConnections() {
@@ -81,7 +81,7 @@ func (s *serverSuite) Test_Switch_ClosedConnections() {
 	s.connWrite(conn2, `{"operation": "conn2"}`)
 
 	s.waitForConnections(s.server, 0)
-	s.Equal(0, len(s.server.connections))
+	s.Equal(0, len(s.server.connections.connMap))
 }
 
 func (s *serverSuite) Test_Switch_EmptyLine() {
@@ -141,18 +141,17 @@ func (s *serverSuite) Test_Switch_Error() {
 
 func (s *serverSuite) Test_serve_ConnectionTimeoutError() {
 	srv, err := ListenAndServe(Settings{
-		Addr:   "localhost:6500",
-		DB:     s.db,
-		Router: s.router,
+		Addr:     "localhost:6500",
+		DB:       s.db,
+		Router:   s.router,
+		Deadline: time.Now().Add(200 * time.Millisecond),
 	})
 	s.Require().NoError(err)
-	tcpListener := srv.listener.(*net.TCPListener)
-	s.Require().NoError(tcpListener.SetDeadline(time.Now().Add(50 * time.Millisecond)))
 
 	_ = s.newConn("localhost:6500")
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 	s.waitForConnections(srv, 0)
-	s.Len(s.server.connections, 0)
+	s.Len(srv.connections.connMap, 0)
 }
 
 func (s *serverSuite) Test_ListenAndServeError() {
@@ -186,7 +185,7 @@ func (s *serverSuite) waitForConnections(srv *Server, connCount int) {
 			s.Fail(fmt.Sprintf("waiting for %d connections timed out", connCount))
 			return
 		case <-tick:
-			if len(srv.connections) == connCount {
+			if len(srv.connections.connMap) == connCount {
 				return
 			}
 		}

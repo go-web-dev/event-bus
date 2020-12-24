@@ -18,9 +18,10 @@ type router interface {
 
 // Settings represents the Event Bus server settings
 type Settings struct {
-	Addr   string
-	Router router
-	DB     io.Closer
+	Addr     string
+	Router   router
+	DB       io.Closer
+	Deadline time.Time
 }
 
 // Server represents the Event Bus TCP server
@@ -28,9 +29,10 @@ type Server struct {
 	listener    net.Listener
 	quit        chan struct{}
 	exited      chan struct{}
-	connections map[int]net.Conn
+	connections connections
 	router      router
 	db          io.Closer
+	deadline    time.Time
 }
 
 // ListenAndServe spins up the Event Bus TCP server
@@ -43,9 +45,10 @@ func ListenAndServe(settings Settings) (*Server, error) {
 		listener:    li,
 		quit:        make(chan struct{}),
 		exited:      make(chan struct{}),
-		connections: map[int]net.Conn{},
+		connections: connections{connMap: map[int]*connection{}},
 		router:      settings.Router,
 		db:          settings.DB,
+		deadline:    settings.Deadline,
 	}
 	go srv.serve()
 	return srv, nil
@@ -66,7 +69,6 @@ func (srv *Server) Stop() error {
 
 func (srv *Server) serve() {
 	logger := logging.Logger
-	var id int
 	logger.Info(
 		"event bus server is up and running on address",
 		zap.String("addr", srv.listener.Addr().String()),
@@ -80,38 +82,45 @@ func (srv *Server) serve() {
 			if err != nil {
 				logger.Error("could not close listener", zap.Error(err))
 			}
-			srv.closeConnections()
+			srv.connections.closeAll()
 			close(srv.exited)
 			return
 		default:
 			tcpListener := srv.listener.(*net.TCPListener)
-			err := tcpListener.SetDeadline(time.Now().Add(500 * time.Millisecond))
+			err := tcpListener.SetDeadline(srv.deadline)
+			if srv.closedConnection(err) {
+				return
+			}
 			if err != nil {
 				logger.Error("failed to set listener deadline", zap.Error(err))
 			}
 
 			conn, err := tcpListener.Accept()
 			if oppErr, ok := err.(*net.OpError); ok && oppErr.Timeout() {
-				// connection timed out - make sure to delete it from local map
-				delete(srv.connections, id-1)
 				continue
+			}
+			if srv.closedConnection(err) {
+				return
 			}
 			if err != nil {
 				logger.Error("failed to accept connection", zap.Error(err))
 				return
 			}
 
-			srv.connections[id] = conn
-			go func(connID int) {
-				logger.Info("client joined", zap.Int("client_id", connID))
+			c := srv.connections.add(conn)
+			go func() {
 				srv.handle(conn)
-				srv.closeConn(conn, connID)
-				delete(srv.connections, connID)
-				logger.Info("client left", zap.Int("client_id", connID))
-			}(id)
-			id++
+				srv.connections.close(c.id)
+			}()
 		}
 	}
+}
+
+func (srv *Server) closedConnection(err error) bool {
+	if oppErr, ok := err.(*net.OpError); ok && oppErr.Unwrap().Error() == "use of closed network connection" {
+		return true
+	}
+	return false
 }
 
 func (srv *Server) handle(conn net.Conn) {
@@ -130,24 +139,5 @@ func (srv *Server) handle(conn net.Conn) {
 		if exited {
 			break
 		}
-	}
-}
-
-func (srv *Server) closeConnections() {
-	logging.Logger.Info("closing all connections")
-	for id, conn := range srv.connections {
-		srv.closeConn(conn, id)
-	}
-}
-
-func (srv *Server) closeConn(conn net.Conn, connID int) {
-	logger := logging.Logger
-	err := conn.Close()
-	if err != nil {
-		logger.Error(
-			"could not close connection",
-			zap.Int("client_id", connID),
-			zap.Error(err),
-		)
 	}
 }

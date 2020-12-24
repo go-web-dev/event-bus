@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/go-web-dev/event-bus/config"
 	"github.com/go-web-dev/event-bus/controllers"
@@ -55,9 +56,10 @@ func main() {
 	router := controllers.NewRouter(bus, cfg)
 
 	serverSettings := server.Settings{
-		Addr:   "localhost:8080",
-		Router: router,
-		DB:     db,
+		Addr:     "localhost:8080",
+		Router:   router,
+		DB:       db,
+		Deadline: time.Now().Add(500 * time.Millisecond),
 	}
 
 	srv, err := server.ListenAndServe(serverSettings)

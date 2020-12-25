@@ -51,35 +51,35 @@ var (
 		StreamID:  s1.ID,
 		Status:    0,
 		CreatedAt: testTime,
-		Body:      []byte(`{"f1": "v1"}`),
+		Body:      []byte(`{"f1":"v1"}`),
 	}
 	s1evt2 = models.Event{
 		ID:        "evt2-id",
 		StreamID:  s1.ID,
 		Status:    0,
 		CreatedAt: testTime,
-		Body:      []byte(`{"f2": "v2"}`),
+		Body:      []byte(`{"f2":"v2"}`),
 	}
 	s1evt3 = models.Event{
 		ID:        "evt3-id",
 		StreamID:  s1.ID,
 		Status:    1,
 		CreatedAt: testTime,
-		Body:      []byte(`{"f3": "v3"}`),
+		Body:      []byte(`{"f3":"v3"}`),
 	}
 	s1evt4 = models.Event{
 		ID:        "evt4-id",
 		StreamID:  s1.ID,
 		Status:    2,
 		CreatedAt: testTime,
-		Body:      []byte(`{"f4": "v4"}`),
+		Body:      []byte(`{"f4":"v4"}`),
 	}
 	s2evt1 = models.Event{
 		ID:        "evt1-id",
 		StreamID:  s2.ID,
 		Status:    0,
 		CreatedAt: testTime,
-		Body:      []byte(`{"f1": "v1"}`),
+		Body:      []byte(`{"f1":"v1"}`),
 	}
 	operations = []string{
 		"create_stream",

@@ -433,6 +433,27 @@ func (s *appSuite) dbGet(key []byte) (string, error) {
 	return v, nil
 }
 
+func (s *appSuite) dbFetch(prefix string) [][]byte {
+	values := make([][]byte, 0)
+	s.Require().NoError(s.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+		prefix := []byte(prefix)
+		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			item := it.Item()
+			err := item.Value(func(val []byte) error {
+				values = append(values, val)
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}))
+	return values
+}
+
 func (s *appSuite) dbSet(key []byte, value []byte) {
 	s.Require().NoError(s.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, value)

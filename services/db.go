@@ -50,8 +50,8 @@ func (d db) fetch(key string, obj interface{}, cb func(fetchResult)) transaction
 		prefix := []byte(key)
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 			item := it.Item()
-			err := item.Value(func(stream []byte) error {
-				err := json.Unmarshal(stream, obj)
+			err := item.Value(func(val []byte) error {
+				err := json.Unmarshal(val, obj)
 				if err != nil {
 					logger.Error("could not unmarshal value from db", zap.Error(err))
 					return err

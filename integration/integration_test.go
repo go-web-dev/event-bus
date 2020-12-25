@@ -165,6 +165,18 @@ func (s *appSuite) Test_Exit() {
 	s.Empty(res.Body)
 }
 
+func (s *appSuite) Test_Operations_DecodeRequestError() {
+}
+
+func (s *appSuite) Test_OperationNotFound() {
+}
+
+func (s *appSuite) Test_Operations_UnAuthorizedError() {
+}
+
+func (s *appSuite) Test_Operations_ParseRequestBodyError() {
+}
+
 func (s *appSuite) waitForServer() {
 	timeout := time.After(3 * time.Second)
 	tick := time.Tick(50 * time.Millisecond)

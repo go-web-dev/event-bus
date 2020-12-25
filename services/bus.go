@@ -26,7 +26,7 @@ func NewBus(d DB) *Bus {
 
 // Bus represents the Event Bus service
 type Bus struct {
-	mu      sync.Mutex
+	mu      sync.RWMutex
 	db      db
 	streams map[string]models.Stream
 }
@@ -116,8 +116,8 @@ func (b *Bus) DeleteStream(streamName string) error {
 // GetStreamInfo gets a stream's short information
 func (b *Bus) GetStreamInfo(streamName string) (models.Stream, error) {
 	logger := logging.Logger
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.mu.RLock()
+	defer b.mu.RUnlock()
 
 	stream, err := b.streamLookup(streamName)
 	if err != nil {

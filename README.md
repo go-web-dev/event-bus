@@ -83,6 +83,10 @@ Before making any kind of requests have a look inside `config/config.yaml`
 in the `auth` section. Make sure to adjust `client_id` and `client_secret` or
 simply add a new entry for another client.
 
+### Resources
+
+- [BadgerDB Docs](https://dgraph.io/docs/badger/get-started/)
+
 ### Sample Requests
 
 Here are some sample JSON requests for Event Bus.

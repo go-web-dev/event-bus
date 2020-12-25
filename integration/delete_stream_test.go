@@ -39,6 +39,8 @@ func (s *appSuite) Test_DeleteStream_StreamNotFoundError() {
 	s.read(conn, &res)
 	s.Equal("delete_stream", res.Operation)
 	s.False(res.Status)
+	s.Empty(res.Body)
+	s.Empty(res.Context)
 	s.Equal("stream 'not-found-stream-name' not found", res.Reason)
 
 	dbStream, err := s.dbGet(someStream.Key())

@@ -30,6 +30,7 @@ func (s *appSuite) Test_GetStreamInfo_StreamNotFoundError() {
 	s.Equal("get_stream_info", res.Operation)
 	s.False(res.Status)
 	s.Empty(res.Body)
+	s.Empty(res.Context)
 	s.Equal("stream 'not-found-stream-name' not found", res.Reason)
 }
 

@@ -31,6 +31,7 @@ func (s *appSuite) Test_GetStreamEvents_StreamNotFoundError() {
 	s.False(res.Status)
 	s.Equal("stream 'nonexistent-stream-name' not found", res.Reason)
 	s.Empty(res.Body)
+	s.Empty(res.Context)
 }
 
 func (s *appSuite) Test_GetStreamEvents_Concurrent() {

@@ -4,7 +4,7 @@ go:
   - 1.15.x
 
 before_script:
-  - go get -u go get -u golang.org/x/lint
+  - go get -u golang.org/x/lint
   - go get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
 
 script:

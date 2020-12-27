@@ -3,11 +3,9 @@ language: go
 go:
   - 1.15.x
 
-before_script:
+script:
   - go get -u golang.org/x/lint/golint
   - go get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
-
-script:
   - ./code-check.sh
   - ./coverage.sh --integration
 

@@ -20,8 +20,8 @@ func (s *appSuite) Test_DeleteStream_Success() {
 
 func (s *appSuite) Test_DeleteStream_StreamNotFoundError() {
 	someStream := models.Stream{
-		ID:   "stream-id",
-		Name: "stream-name",
+		ID:        "stream-id",
+		Name:      "stream-name",
 		CreatedAt: testTime,
 	}
 	s.Require().NoError(s.db.DropAll())

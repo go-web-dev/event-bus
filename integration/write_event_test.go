@@ -51,14 +51,14 @@ func (s *appSuite) Test_WriteEvent_Concurrent() {
 	s.wg.Wait()
 	s.wg.Add(1)
 	go func() {
-		time.Sleep(50*time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		s.write(conn2, "write_event", `{"stream_name": "s3-name", "event": {"e2-field": "e2-value"}}`)
 		s.wg.Done()
 	}()
 	s.wg.Wait()
 	s.wg.Add(1)
 	go func() {
-		time.Sleep(100*time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		s.write(conn3, "write_event", `{"stream_name": "s3-name", "event": {"e3-field": "e3-value"}}`)
 		s.wg.Done()
 	}()

@@ -6,6 +6,7 @@ go:
 script:
   - go get -u golang.org/x/lint/golint
   - go get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+  - go get golang.org/x/net golang.org/x/sys golang.org/x/text
   - ./code-check.sh
   - ./coverage.sh --integration
 

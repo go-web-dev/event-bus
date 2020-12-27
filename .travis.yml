@@ -4,7 +4,7 @@ go:
   - 1.15.x
 
 script:
-  - ./code-check
+  - ./code-check.sh
   - ./coverage.sh --integration
 
 after_success:

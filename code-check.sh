@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Download the following before running the script
-# go get -u https://github.com/golang/lint
+# go get -u golang.org/x/lint
 # go get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
 
 files=$(find . -not -path './vendor*' -name '*.go')

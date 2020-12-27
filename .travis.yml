@@ -4,8 +4,8 @@ go:
   - 1.15.x
 
 install:
-  - go get -u https://github.com/golang/lint
-  - go get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+  - https://github.com/golang/lint
+  - golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
 
 script:
   - ./code-check.sh
